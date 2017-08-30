@@ -31,7 +31,7 @@ Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0*
 What you need:
 
 - [samtools](http://samtools.sourceforge.net/)
-- [Blast](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/)
+- Blast. Executables available at [ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
 - Python 2.7 or higher (but not Python 3)
 - [pyfaidx](https://pypi.python.org/pypi/pyfaidx) module
 
