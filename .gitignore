@@ -1,3 +1,17 @@
+# Data/results files
+*.fa
+*.gz
+*.tsv
+*.bed
+*.fai
+*.nhr
+*.nin
+*.nsq
+*.txt
+
+# Emacs
+*.~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
