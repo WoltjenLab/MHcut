@@ -30,10 +30,9 @@ Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0*
 
 What you need:
 
-- [samtools](http://samtools.sourceforge.net/)
 - Blast. Executables available at [ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
 - Python 2.7 or higher (but not Python 3)
-- [pyfaidx](https://pypi.python.org/pypi/pyfaidx) module
+- [pyfaidx](https://pypi.python.org/pypi/pyfaidx) module. Install with `pip install pyfaidx` or find alternatives [here](https://pypi.python.org/pypi/pyfaidx).
 
 ## Preparing the reference genome
 
@@ -42,7 +41,7 @@ The following commands download the reference genome, index it and build a Blast
 ```shell
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz
 gunzip hg38.fa.gz
-samtools faidx hg38.fa
+python indexFasta.py hg38.fa
 makeblastdb -in hg38.fa -dbtype nucl -title hg38
 ```
 
