@@ -144,7 +144,6 @@ parser.add_argument('-var', dest='varfile', required=True,
                     help='the file with the variants location (BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True, help='the reference genome fasta file')
 parser.add_argument('-minvarL', dest='minvarL', default=4, help='the minimum variant length')
-parser.add_argument('-maxvarL', dest='maxvarL', default=50, help='the maximum variant length')
 parser.add_argument('-minMHL', dest='minMHL', default=3, help='the minimum microhomology length')
 parser.add_argument('-maxTail', dest='maxTail', default=20, help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
@@ -176,7 +175,7 @@ for var_line in variantInputFile:
     vstart = int(var_line[1])
     vend = int(var_line[2])
     vsize = vend - vstart + 1
-    if(vsize < args.minvarL or vsize > args.maxvarL):
+    if(vsize < args.minvarL):
         # If variant is too small or too big, skip and jump to next iteration
         continue
     if(var_line[0] not in reffa.keys()):

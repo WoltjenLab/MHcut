@@ -58,7 +58,6 @@ The required parameters are:
 Other optional parameters:
 
 - *-minvarL* the minimum length for a variant to be considered. Default is 4.
-- *-maxvarL* the maximum length for a variant to be considered. Default is 50.
 - *-minMHL* the minimum length of the MH. Default is 3.
 - *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at 20. Relevant for large variants.
 
