@@ -11,51 +11,78 @@ Spy_PAM_rev = "CC"
 
 def mhTest(seq1, seq2, debug=False):
     '''Test for presence of microhomology between two sequences.'''
-    res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'al': '', 'seq1': '', 'seq2': ''}
-    # ALignment
-    al = []
+    res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
+    # ALignm the two sequences
+    al_full = []
     for pos in range(len(seq1)):
-        al.append(seq1[pos] == seq2[pos])
-    # First base must match
-    if(not al[0]):
+        al_full.append(seq1[pos] == seq2[pos])
+    # First base must match, otherwise return the 'res' as is
+    if(not al_full[0]):
         return(res)
-    # Cut alignment if two consecutive mismatches
-    alcut = al
-    for pos in range(len(al)-1):
-        if(not al[pos] and not al[pos+1]):
-            alcut = al[:pos]
+    # Trim the end of the alignment if two consecutive mismatches
+    al_trimmed = al_full
+    for pos in range(len(al_full)-1):
+        if(not al_full[pos] and not al_full[pos+1]):
+            al_trimmed = al_full[:pos]
             break
     # Cut potential last mismatch
-    if(not alcut[-1]):
-        alcut = alcut[:-1]
+    if(not al_trimmed[-1]):
+        al_trimmed = al_trimmed[:-1]
     # Count consecutive matches in the beginning
-    m1L = 0
-    for pos in range(len(alcut)):
-        if(alcut[pos]):
-            m1L += 1
+    for pos in range(len(al_trimmed)):
+        if(al_trimmed[pos]):
+            res['m1L'] += 1
         else:
             break
-    # Other alignment stats
-    nb_match = sum(alcut)
-    hom = float(nb_match) / len(alcut)
-    # Compute a score
-    score = m1L + nb_match
-    # Print debug message
-    alverb = ''.join(['|' if all else 'x' for all in alcut])
-    res = {'score': score, 'm1L': m1L, 'mhL': len(alcut), 'hom': hom, 'al': alverb,
-           'nbMM': len(alcut) - nb_match,
-           'mhdist': len(al) - len(alcut),
-           'seq1': seq1[0:len(alcut)], 'seq2': seq2[0:len(alcut)]}
+    # Other alignment stats: length, homology, nb of mismatches
+    nb_match = sum(al_trimmed)
+    res['mhL'] = len(al_trimmed)
+    res['hom'] = float(nb_match) / res['mhL']
+    res['nbMM'] = res['mhL'] - nb_match
+    res['mhdist'] = len(al_full) - res['mhL']  # this is the two hologous sequences
+    # Compute a score, later used to choose which flank has the best MH
+    res['score'] = res['m1L'] + nb_match
+    # Cartoon of the MH (e.g. ||x|)
+    res['cartoon'] = ''.join(['|' if al else 'x' for al in al_trimmed])
+    # The two homologous sequences
+    res['seq1'] = seq1[0:res['mhL']]
+    res['seq2'] = seq2[0:res['mhL']]
     return(res)
 
 
+def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
+    '''Look for PAM cuts between the MH regions.'''
+    seq = fl1seq + varseq + fl2seq
+    search_range = [flsize - 1, flsize + len(varseq) - mhfl['mhL']]
+    if(mhfl['flank'] == 2):
+        search_range = [flsize + mhfl['mhL'] - 1, flsize + len(varseq)]
+    # Test each position: if it matched the motif and in the search range, add to list
+    pams = []
+    for pos in xrange(len(seq)-1):
+        proto_seq = strand = cut_pos = False
+        if(seq[pos:pos+2] == Spy_PAM):
+            cut_pos = pos + Spy_cut - 1
+            strand = '+'
+        if(seq[pos:pos+2] == Spy_PAM_rev):
+            cut_pos = pos - Spy_cut + len(Spy_PAM_rev) - 1
+            strand = '-'
+        if(strand and cut_pos >= search_range[0] and cut_pos < search_range[0] + maxTail
+           and cut_pos < search_range[1] and cut_pos >= search_range[1] - maxTail):
+            if(strand == '+'):
+                proto_seq = seq[(cut_pos - 20 - Spy_cut):(cut_pos - Spy_cut)]
+            else:
+                proto_seq = seq[(cut_pos + Spy_cut + 2):(cut_pos + 20 + Spy_cut + 2)]
+            pams.append({'cutPosition': cut_pos, 'strand': strand, 'proto': proto_seq})
+    return(pams)
+
+
 def alignPamsBlast(pams, reffile):
-    '''Align protospacers and return an updated 'pams' object.'''
+    '''Align protospacers and return an updated version of the input "pams" list.'''
     fasta_file = 'tempMHcut.fasta'
     ff = open(fasta_file, 'w')
     pams_hash = {}
     for pam in pams:
-        pamid = str(pam['cut']) + '_' + pam['strand']
+        pamid = str(pam['cutPosition']) + '_' + pam['strand']
         pam['mm0'] = 0
         pam['mm1'] = 0
         pam['mm2'] = 0
@@ -115,37 +142,14 @@ def alignPamsBlast(pams, reffile):
 #     # os.remove(sai_file)
 #     return pams
 
-
-def findPAM(seq, flank_size):
-    '''Find PAM motives in a sequence.'''
-    res = []
-    for pos in xrange(len(seq)-1):
-        cut = proto_seq = strand = real_cut = False
-        if(seq[pos:pos+2] == Spy_PAM):
-            cut = pos + Spy_cut
-            if(cut > flank_size - 1 and cut < len(seq) - flank_size + 1):
-                real_cut = cut - 1
-                proto_seq = seq[(cut - 20 - Spy_cut - 1):(cut - Spy_cut - 1)]  # TODO
-                strand = '+'
-        if(seq[pos:pos+2] == Spy_PAM_rev):
-            cut = pos - Spy_cut + len(Spy_PAM_rev) - 1
-            if(cut > flank_size - 2 and cut < len(seq) - flank_size):
-                real_cut = cut
-                proto_seq = seq[(cut + Spy_cut + 2):(cut + 20 + Spy_cut + 2)]  # TODO
-                strand = '-'
-        if(strand):
-            res.append({'cut': cut, 'realcut': real_cut, 'strand': strand,
-                        'proto': proto_seq})
-    return(res)
-
 # Define arguments
 parser = argparse.ArgumentParser(description='Find regions with microhomology and a cut position.')
 parser.add_argument('-var', dest='varfile', required=True,
                     help='the file with the variants location (BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True, help='the reference genome fasta file')
-parser.add_argument('-minvarL', dest='minvarL', default=4, help='the minimum variant length')
+parser.add_argument('-minvarL', dest='minvarL', default=3, help='the minimum variant length')
 parser.add_argument('-minMHL', dest='minMHL', default=3, help='the minimum microhomology length')
-parser.add_argument('-maxTail', dest='maxTail', default=20, help='the maximum hanging tail allowed')
+parser.add_argument('-maxTail', dest='maxTail', default=50, help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
 args = parser.parse_args()
 
@@ -153,115 +157,106 @@ args = parser.parse_args()
 reffa = Fasta(args.reffile)
 
 # Open connection to output files
-variantOutputFile = open(args.outprefix + '-variants.tsv', 'w')
-guideOutputFile = open(args.outprefix + '-guides.tsv', 'w')
-cartoonOutputFile = open(args.outprefix + '-cartoons.tsv', 'w')
+variant_output_file = open(args.outprefix + '-variants.tsv', 'w')
+guide_output_file = open(args.outprefix + '-guides.tsv', 'w')
+cartoon_output_file = open(args.outprefix + '-cartoons.tsv', 'w')
 
 # Open connection to input file
-variantInputFile = open(args.varfile, 'r')
+variant_input_file = open(args.varfile, 'r')
 
 # Read firt line of input file (header) and write header in output file
-inhead = variantInputFile.next().rstrip('\n')
-outhead = inhead + '\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tseq1\tseq2'
-variantOutputFile.write(outhead + '\n')
-gouthead = outhead + '\tseq\tmm0\tmm1\tmm2\n'
-guideOutputFile.write(gouthead)
-cartoonOutputFile.write(outhead + '\n\n')
+# Change colunm names here.
+# Add/remove columns here but also in the "Write in output files" section
+inhead = variant_input_file.next().rstrip('\n')
+outhead = inhead + '\tvarL\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2'
+variant_output_file.write(outhead + '\n')
+gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\n'
+guide_output_file.write(gouthead)
+cartoon_output_file.write(outhead + '\n\n')
 
 # Read each line of the input file
-for var_line in variantInputFile:
-    var_line_raw = var_line.rstrip('\n')
-    var_line = var_line_raw.split('\t')
-    vstart = int(var_line[1])
-    vend = int(var_line[2])
+for input_line in variant_input_file:
+    input_line_raw = input_line.rstrip('\n')
+    input_line = input_line_raw.split('\t')
+    vstart = int(input_line[1])
+    vend = int(input_line[2])
     vsize = vend - vstart + 1
     if(vsize < args.minvarL):
         # If variant is too small or too big, skip and jump to next iteration
         continue
-    if(var_line[0] not in reffa.keys()):
+    if(input_line[0] not in reffa.keys()):
         # If chromosome name not in reference, skip variant
         continue
-    # print var_line_raw
     # Retrieve sequences. Careful with position and shift
     flsize = max(vsize, 20)
-    varseq = str(reffa[var_line[0]][(vstart-1):vend])
-    fl1seq = str(reffa[var_line[0]][(vstart-flsize-1):(vstart-1)])
-    fl2seq = str(reffa[var_line[0]][vend:(vend+flsize)])
+    varseq = str(reffa[input_line[0]][(vstart-1):vend])
+    fl1seq = str(reffa[input_line[0]][(vstart-flsize-1):(vstart-1)])
+    fl2seq = str(reffa[input_line[0]][vend:(vend+flsize)])
     # Test MH in each flank (reverse for flank 1) and save best MH
     mhfl1 = mhTest(varseq[::-1], fl1seq[::-1])
     mhfl2 = mhTest(varseq, fl2seq)
-    fl = 1
-    if(mhfl1['score'] > mhfl2['score']):
+    if(mhfl1['score'] > mhfl2['score']):  # Using the alignment score, the best flank is chosen
         mhfl = mhfl1
-        mhfl['al'] = mhfl['al'][::-1]
+        mhfl['flank'] = 1  # This is to remember which flank is chosen
+        mhfl['cartoon'] = mhfl['cartoon'][::-1]
     else:
         mhfl = mhfl2
-        fl = 2
-    # If not MH, skip
+        mhfl['flank'] = 2
+    # If no MH or too small, jump to the next input line
     if(mhfl['score'] == 0 or mhfl['mhL'] < args.minMHL):
         continue
     # Find PAM motives
-    allseq = fl1seq + varseq + fl2seq
-    pams = findPAM(allseq, len(fl1seq))
-    # Find PAM in correct location and filter others
-    goodMin = flsize - 1
-    goodMax = flsize + vsize - mhfl['mhL']
-    if(fl == 2):
-        goodMin = flsize + mhfl['mhL'] - 1
-        goodMax = flsize + vsize
-    for pam in pams:
-        if(pam['realcut'] >= goodMin and pam['realcut'] < goodMin + args.maxTail
-           and pam['realcut'] < goodMax and pam['realcut'] >= goodMax - args.maxTail):
-            pam['goodpam'] = True
-        else:
-            pam['goodpam'] = False
-    pams_filter = []
-    for pam in pams:
-        if pam['goodpam']:
-            pams_filter.append(pam)
-    pams = pams_filter
-    # Align protospacers and keep unique ones
+    pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail)
+    # Map protospacers to the genome and keep unique ones
     if(len(pams) > 0):
         pams = alignPamsBlast(pams, args.reffile)
         pams_filter = []
         for pam in pams:
+            # This where to define how unique the protospacer must be
+            # Here there must be only one position in the genome aligning perfectly
             if pam['mm0'] == 1:
                 pams_filter.append(pam)
         pams = pams_filter
     # Write in output files
-    outline = var_line_raw + '\t' + str(len(pams) > 0) + '\t' + str(mhfl['mhL']) + '\t'
-    outline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
-    outline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
-    variantOutputFile.write(outline + '\n')
+    # Add/remove columns here (without forgetting the header)
+    voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(len(pams) > 0)
+    voutline += '\t' + str(mhfl['mhL']) + '\t'
+    voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
+    voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
+    variant_output_file.write(voutline + '\n')
     for pam in pams:
-        goutline = outline + '\t' + pam['proto'] + '\t' + str(pam['mm0'])
-        goutline += '\t' + str(pam['mm1']) + '\t' + str(pam['mm2']) + '\n'
-        guideOutputFile.write(goutline)
-    # Debug 'cartoon'
-    cartoonOutputFile.write(outline + '\n')
-    spaces = flsize + 1
-    space1 = flsize - mhfl['mhL']
-    if(fl == 1):
-        spaces = space1
-    spaces = ' ' * spaces
-    cartoonOutputFile.write(spaces + mhfl['al'] + ' ' * (vsize - mhfl['mhL'] + 1) + mhfl['al'] + '\n')
-    cartoonOutputFile.write(fl1seq + '-' + varseq + '-' + fl2seq + '\n')
-    pamdebug = ['_' for i in range(2*flsize + vsize)]
+        guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
+        guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']) + '\n')
+    # Write the cartoon
+    cartoon_output_file.write(voutline + '\n')
+    # Cartoon: alignment line
+    white_spaces_before = flsize - mhfl['mhL']
+    if(mhfl['flank'] == 2):
+        white_spaces_before += mhfl['mhL'] + 1
+    white_spaces_before = ' ' * white_spaces_before
+    white_spaces_between = ' ' * (vsize - mhfl['mhL'] + 1)
+    cartoon_output_file.write(white_spaces_before + mhfl['cartoon'])
+    cartoon_output_file.write(white_spaces_between + mhfl['cartoon'] + '\n')
+    # Cartoon: sequence line
+    cartoon_output_file.write(fl1seq + '-' + varseq + '-' + fl2seq + '\n')
+    # Cartoon: PAM position line
+    pam_cartoon = ['_' for i in range(2*flsize + vsize)]
     for pam in pams:
         if(pam['strand'] == '+'):
-            pamdebug[pam['cut']] = '\\'
+            pam_cartoon[pam['cutPosition'] + 1] = '\\'
         else:
-            pamdebug[pam['cut']] = '/'
-    pamdebug = ''.join(pamdebug)
-    pamdebug = pamdebug[:flsize] + ' ' + pamdebug[flsize:(flsize + vsize)] + ' ' + pamdebug[(flsize + vsize):]
-    cartoonOutputFile.write(pamdebug + '\n')
+            pam_cartoon[pam['cutPosition']] = '/'
+    pam_cartoon = ''.join(pam_cartoon)
+    cartoon_output_file.write(pam_cartoon[:flsize] + ' ' + pam_cartoon[flsize:(flsize + vsize)])
+    cartoon_output_file.write(' ' + pam_cartoon[(flsize + vsize):] + '\n')
+    # Cartoon: protospacers sequence
     if(len(pams) > 0):
-        cartoonOutputFile.write('Protospacers:\n')
+        cartoon_output_file.write('Protospacers:\n')
         for pam in pams:
-            cartoonOutputFile.write(pam['proto'] + '\n')
-    cartoonOutputFile.write('\n\n')
+            cartoon_output_file.write(pam['proto'] + '\n')
+    cartoon_output_file.write('\n\n')
 
-variantInputFile.close()
-variantOutputFile.close()
-guideOutputFile.close()
-cartoonOutputFile.close()
+variant_input_file.close()
+variant_output_file.close()
+guide_output_file.close()
+cartoon_output_file.close()

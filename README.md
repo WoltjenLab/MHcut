@@ -57,9 +57,9 @@ The required parameters are:
 
 Other optional parameters:
 
-- *-minvarL* the minimum length for a variant to be considered. Default is 4.
+- *-minvarL* the minimum length for a variant to be considered. Default is 3.
 - *-minMHL* the minimum length of the MH. Default is 3.
-- *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at 20. Relevant for large variants.
+- *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at 50. Relevant for large variants.
 
 ## Output
 
@@ -76,7 +76,7 @@ Currently the columns of the output are:
 - *hom*: proportion of matches.
 - *nbMM*: number of mismatches.
 - *mhDist*: distance between the end of MH and the variant boundary.
-- *seq1*/*seq2*: sequences of the MH.
+- *MHseq1*/*MHseq2*: sequences of the MH.
 
 ### The "guide" file
 
@@ -84,13 +84,10 @@ Named `PREFIX-guides.tsv`, the "guide" file has one line per protospacer. It mea
 
 Currently the columns of the output are the same as for the "variant" file with the following additional columns:
 
-- *seq* the sequence of the protospacer.
+- *protospacer* the sequence of the protospacer.
 - *mm0* the number of position in the genome where the sequence align with no mismatches.
 - *mm1* the number of position in the genome where the sequence align with 1 mismatches.
 - *mm0* the number of position in the genome where the sequence align with 2 mismatches.
-
-
-Note: I realize now that there are *seq1*/*seq2*/*seq* columns. I'll find better names for the next version. Maybe *MHseq1*/*MHseq2*/*protoSeq*.
 
 ### The "cartoon" file
 
@@ -116,7 +113,4 @@ GGGCCGCGATGTGCAGGGCC
 
 ## Next
 
-- Clarify column names.
-- Clarify names in the code.
-- Add *variant size* column.
 - Add a more flexible PAM cut search.
