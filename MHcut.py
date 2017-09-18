@@ -2,6 +2,7 @@ import argparse
 from pyfaidx import Fasta
 import subprocess
 import os
+import sys
 # import re
 
 Spy_PAM = "GG"
@@ -164,6 +165,14 @@ cartoon_output_file = open(args.outprefix + '-cartoons.tsv', 'w')
 # Open connection to input file
 variant_input_file = open(args.varfile, 'r')
 
+# Read input file once to get number of line for progress bar
+input_nb_lines = 0
+for line in variant_input_file:
+    input_nb_lines += 1
+# Reopen
+variant_input_file.close()
+variant_input_file = open(args.varfile, 'r')
+
 # Read firt line of input file (header) and write header in output file
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
@@ -174,8 +183,17 @@ gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\n'
 guide_output_file.write(gouthead)
 cartoon_output_file.write(outhead + '\n\n')
 
+# Start progress bar
+sys.stdout.write('[' + ' ' * 100 + ']')
+
 # Read each line of the input file
+line_cpt = 0
+input_nb_lines = input_nb_lines / 100
 for input_line in variant_input_file:
+    line_cpt += 1
+    if(line_cpt % input_nb_lines == 0):
+        percent = line_cpt / input_nb_lines
+        sys.stdout.write('\r[' + '*' * percent + ' ' * (100 - percent) + ']')
     input_line_raw = input_line.rstrip('\n')
     input_line = input_line_raw.split('\t')
     vstart = int(input_line[1])
@@ -285,6 +303,8 @@ for input_line in variant_input_file:
         for pam in pams:
             cartoon_output_file.write(pam['proto'])
     cartoon_output_file.write('\n\n')
+
+print '\nDone.\n'
 
 variant_input_file.close()
 variant_output_file.close()
