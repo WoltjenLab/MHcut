@@ -10,13 +10,18 @@ Spy_cut = -4
 Spy_PAM_rev = "CC"
 
 
-def mhTest(seq1, seq2, debug=False):
+def mhTest(var_seq, fl_seq):
     '''Test for presence of microhomology between two sequences.'''
     res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
+    # The flank sequence is smaller than the reference sequence, skip.
+    # Very very rare, e.g. the flank reaches the telomeres because the variant is huge (e.g. 2 Mbp).
+    # (Maybe we want to integrate this at some point)
+    if(len(fl_seq) < len(var_seq)):
+        return(res)
     # ALignm the two sequences
     al_full = []
-    for pos in range(len(seq1)):
-        al_full.append(seq1[pos] == seq2[pos])
+    for pos in range(len(var_seq)):
+        al_full.append(var_seq[pos] == fl_seq[pos])
     # First base must match, otherwise return the 'res' as is
     if(not al_full[0]):
         return(res)
@@ -46,8 +51,8 @@ def mhTest(seq1, seq2, debug=False):
     # Cartoon of the MH (e.g. ||x|)
     res['cartoon'] = ''.join(['|' if al else 'x' for al in al_trimmed])
     # The two homologous sequences
-    res['seq1'] = seq1[0:res['mhL']]
-    res['seq2'] = seq2[0:res['mhL']]
+    res['seq1'] = var_seq[0:res['mhL']]
+    res['seq2'] = fl_seq[0:res['mhL']]
     return(res)
 
 
@@ -301,7 +306,7 @@ for input_line in variant_input_file:
     if(len(pams) > 0):
         cartoon_output_file.write('Protospacers:\n')
         for pam in pams:
-            cartoon_output_file.write(pam['proto'])
+            cartoon_output_file.write(pam['proto'] + '\n')
     cartoon_output_file.write('\n\n')
 
 print '\nDone.\n'
