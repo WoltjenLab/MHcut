@@ -147,26 +147,30 @@ parser.add_argument('-minvarL', dest='minvarL', default=4, help='the minimum var
 parser.add_argument('-maxvarL', dest='maxvarL', default=50, help='the maximum variant length')
 parser.add_argument('-minMHL', dest='minMHL', default=3, help='the minimum microhomology length')
 parser.add_argument('-maxTail', dest='maxTail', default=20, help='the maximum hanging tail allowed')
-parser.add_argument('-debug', dest='debug', action='store_true', help='debug mode')
-parser.add_argument('-vout', dest='voutfile', required=True, help='the variant output file')
-parser.add_argument('-gout', dest='goutfile', required=True, help='the guide output file')
+parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
 args = parser.parse_args()
 
 # Open connection to reference genome
 reffa = Fasta(args.reffile)
 
-# Read each line of the variant file and analyze it and write in output file
-var_lines = open(args.varfile, 'r')
-inhead = var_lines.next().rstrip('\n')
-outf = open(args.voutfile, 'w')
+# Open connection to output files
+variantOutputFile = open(args.outprefix + '-variants.tsv', 'w')
+guideOutputFile = open(args.outprefix + '-guides.tsv', 'w')
+cartoonOutputFile = open(args.outprefix + '-cartoons.tsv', 'w')
+
+# Open connection to input file
+variantInputFile = open(args.varfile, 'r')
+
+# Read firt line of input file (header) and write header in output file
+inhead = variantInputFile.next().rstrip('\n')
 outhead = inhead + '\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tseq1\tseq2'
-outf.write(outhead + '\n')
-goutf = open(args.goutfile, 'w')
+variantOutputFile.write(outhead + '\n')
 gouthead = outhead + '\tseq\tmm0\tmm1\tmm2\n'
-goutf.write(gouthead)
-if(args.debug):
-    print outhead
-for var_line in var_lines:
+guideOutputFile.write(gouthead)
+cartoonOutputFile.write(outhead + '\n\n')
+
+# Read each line of the input file
+for var_line in variantInputFile:
     var_line_raw = var_line.rstrip('\n')
     var_line = var_line_raw.split('\t')
     vstart = int(var_line[1])
@@ -229,36 +233,36 @@ for var_line in var_lines:
     outline = var_line_raw + '\t' + str(len(pams) > 0) + '\t' + str(mhfl['mhL']) + '\t'
     outline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
     outline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
-    outf.write(outline + '\n')
+    variantOutputFile.write(outline + '\n')
     for pam in pams:
         goutline = outline + '\t' + pam['proto'] + '\t' + str(pam['mm0'])
         goutline += '\t' + str(pam['mm1']) + '\t' + str(pam['mm2']) + '\n'
-        goutf.write(goutline)
+        guideOutputFile.write(goutline)
     # Debug 'cartoon'
-    if(args.debug):
-        print outline
-        spaces = flsize + 1
-        space1 = flsize - mhfl['mhL']
-        if(fl == 1):
-            spaces = space1
-        spaces = ' ' * spaces
-        print spaces + mhfl['al'] + ' ' * (vsize - mhfl['mhL'] + 1) + mhfl['al']
-        print fl1seq + '-' + varseq + '-' + fl2seq
-        pamdebug = ['_' for i in range(2*flsize + vsize)]
+    cartoonOutputFile.write(outline + '\n')
+    spaces = flsize + 1
+    space1 = flsize - mhfl['mhL']
+    if(fl == 1):
+        spaces = space1
+    spaces = ' ' * spaces
+    cartoonOutputFile.write(spaces + mhfl['al'] + ' ' * (vsize - mhfl['mhL'] + 1) + mhfl['al'] + '\n')
+    cartoonOutputFile.write(fl1seq + '-' + varseq + '-' + fl2seq + '\n')
+    pamdebug = ['_' for i in range(2*flsize + vsize)]
+    for pam in pams:
+        if(pam['strand'] == '+'):
+            pamdebug[pam['cut']] = '\\'
+        else:
+            pamdebug[pam['cut']] = '/'
+    pamdebug = ''.join(pamdebug)
+    pamdebug = pamdebug[:flsize] + ' ' + pamdebug[flsize:(flsize + vsize)] + ' ' + pamdebug[(flsize + vsize):]
+    cartoonOutputFile.write(pamdebug + '\n')
+    if(len(pams) > 0):
+        cartoonOutputFile.write('Protospacers:\n')
         for pam in pams:
-            if(pam['strand'] == '+'):
-                pamdebug[pam['cut']] = '\\'
-            else:
-                pamdebug[pam['cut']] = '/'
-        pamdebug = ''.join(pamdebug)
-        pamdebug = pamdebug[:flsize] + ' ' + pamdebug[flsize:(flsize + vsize)] + ' ' + pamdebug[(flsize + vsize):]
-        print pamdebug
-        if(len(pams) > 0):
-            print 'Protospacers:'
-            for pam in pams:
-                print pam['proto']
-        print '\n'
+            cartoonOutputFile.write(pam['proto'] + '\n')
+    cartoonOutputFile.write('\n\n')
 
-var_lines.close()
-outf.close()
-goutf.close()
+variantInputFile.close()
+variantOutputFile.close()
+guideOutputFile.close()
+cartoonOutputFile.close()

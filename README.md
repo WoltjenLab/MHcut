@@ -4,7 +4,7 @@
 ## Microhomology search
 
     Flank 1:             |||x|||        |||x|||
-	AGTGCCGTTAATCAGAGGTG-GGGCTGTGATGGTG-GGGGTGTTGTCGTTGACGTC
+	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGGTGTTGTCGTTGACGTC
 	Flank 2:        ||||           ||||
 
 For each flank the microhomology is extended until the end of the variant as long as:
@@ -17,7 +17,7 @@ The MH can be chosen from 2 flanks. MHcut uses a score to choose the "best" flan
 ## PAM cut search
 
                          |||x|||        |||x|||
-	AGTGCCGTTAATCAGAGGTG-GGGCTGTGATGGTG-GGGGTGTTGTCGTTGACGTC
+	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGGTGTTGTCGTTGACGTC
 	                            <------>
 
 PAM cuts are searched between the MH and the variant boundary. In the example above, the first valid cut is between the T and G, and the last valid cut between the C and G.
@@ -47,23 +47,26 @@ makeblastdb -in hg38.fa -dbtype nucl -title hg38
 
 ## Usage
 
-	python MHcut.py -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -debug -vout MHcut-NCBI-chrX.tsv -gout MHcut-NCBI-chrX-guides.tsv > MHcut-NCBI-chrX.log
+	python MHcut.py -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -out MHcut-NCBI-chrX
 
-- *-var* a TAB delimited file starting with chr/start/end columns and then whatever else (e.g. rsid, gene).
-- *-ref* a fasta file with the reference genome (indexed).
+The required parameters are:
+
+- *-var* a TAB delimited file starting with chr/start/end columns and then whatever else (e.g. rsid, gene). The first row contains the column names.
+- *-ref* a fasta file with the reference genome. It must be indexed and prepared for Blast (see previous section).
+- *-out* the prefix for the output files (TSV files). 
+
+Other optional parameters:
+
 - *-minvarL* the minimum length for a variant to be considered. Default is 4.
 - *-maxvarL* the maximum length for a variant to be considered. Default is 50.
 - *-minMHL* the minimum length of the MH. Default is 3.
 - *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at 20. Relevant for large variants.
-- *-debug* prints a "cartoon" version for each variant.
-- *-vout* the name of the "variant" output file (TSV files).
-- *-gout* the name of the "guide" output file (TSV files).
 
 ## Output
 
 ### The "variant" file
 
-The "variant" file has one line per input variant with information about the MH found and if a valid PAM cut is available or not.
+Named `PREFIX-variants.tsv`, the "variant" file  has one line per input variant with information about the MH found and if a valid PAM cut is available or not.
 
 Currently the columns of the output are:
 
@@ -78,7 +81,7 @@ Currently the columns of the output are:
 
 ### The "guide" file
 
-The "guide" file has one line per protospacer. It means the same variant can be present several times if several valid PAM cuts are available.
+Named `PREFIX-guides.tsv`, the "guide" file has one line per protospacer. It means the same variant can be present several times if several valid PAM cuts are available. Only valid protospacers are returned, i.e. between micro-homologies and unique in the genome.
 
 Currently the columns of the output are the same as for the "variant" file with the following additional columns:
 
@@ -90,10 +93,30 @@ Currently the columns of the output are the same as for the "variant" file with 
 
 Note: I realize now that there are *seq1*/*seq2*/*seq* columns. I'll find better names for the next version. Maybe *MHseq1*/*MHseq2*/*protoSeq*.
 
+### The "cartoon" file
+
+Named `PREFIX-cartoons.tsv`, the "cartoon" file has one paragraph per variant with:
+
+1. The corresponding line from the "variant" file (e.g. MH metrics, PAM found or not).
+1. The location of the micro-homology. `|` means a match, `x` a mismatch.
+1. The location of valid PAM cuts. `\` and `/` depending on the strand of the PAM motif.
+1. A list of valid protospacers if any.
+
+For example, a 3 bases perfect MH with 3 valid PAM cuts:
+
+```
+chr8	41725834	41725853	ANK1	True	3	3	1.0	0	17	GCG	GCG
+                     |||                  |||
+GCGTGTCGTCGTTGCGGGCC-GCGATGTGCAGGGCCGGGAG-GCGCACCTTCCCCTTGGTGC
+____________________ _______\___\\_______ ____________________
+Protospacers:
+GTTGCGGGCCGCGATGTGCA
+CGGGCCGCGATGTGCAGGGC
+GGGCCGCGATGTGCAGGGCC
+```
 
 ## Next
 
-- Always produce the log/cartoon into another output file.
 - Clarify column names.
 - Clarify names in the code.
 - Add *variant size* column.
