@@ -229,16 +229,17 @@ for input_line in variant_input_file:
         guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']) + '\n')
     # Write the cartoon
     cartoon_output_file.write(voutline + '\n')
+    cartoon_output_lines = ['', '', '']
     # Cartoon: alignment line
     white_spaces_before = flsize - mhfl['mhL']
     if(mhfl['flank'] == 2):
         white_spaces_before += mhfl['mhL'] + 1
     white_spaces_before = ' ' * white_spaces_before
     white_spaces_between = ' ' * (vsize - mhfl['mhL'] + 1)
-    cartoon_output_file.write(white_spaces_before + mhfl['cartoon'])
-    cartoon_output_file.write(white_spaces_between + mhfl['cartoon'] + '\n')
+    cartoon_output_lines[0] = white_spaces_before + mhfl['cartoon']
+    cartoon_output_lines[0] += white_spaces_between + mhfl['cartoon']
     # Cartoon: sequence line
-    cartoon_output_file.write(fl1seq + '-' + varseq + '-' + fl2seq + '\n')
+    cartoon_output_lines[1] = fl1seq + '-' + varseq + '-' + fl2seq
     # Cartoon: PAM position line
     pam_cartoon = ['_' for i in range(2*flsize + vsize)]
     for pam in pams:
@@ -247,13 +248,42 @@ for input_line in variant_input_file:
         else:
             pam_cartoon[pam['cutPosition']] = '/'
     pam_cartoon = ''.join(pam_cartoon)
-    cartoon_output_file.write(pam_cartoon[:flsize] + ' ' + pam_cartoon[flsize:(flsize + vsize)])
-    cartoon_output_file.write(' ' + pam_cartoon[(flsize + vsize):] + '\n')
+    cartoon_output_lines[2] = pam_cartoon[:flsize] + ' ' + pam_cartoon[flsize:(flsize + vsize)]
+    cartoon_output_lines[2] += ' ' + pam_cartoon[(flsize + vsize):]
+    # If the line is too long (large variants), trim the ends and middle
+    flank_buffer = 10  # How many extra bases to show on the flanks (outside of the MH region)
+    if(len(cartoon_output_lines[1]) > 2 * (flank_buffer + mhfl['mhL'] + args.maxTail)):
+        cartoon_part1 = [flsize - mhfl['mhL'] - flank_buffer, flsize + args.maxTail]
+        cartoon_part2 = [flsize + vsize - mhfl['mhL'] - args.maxTail, flsize + vsize + flank_buffer]
+        # If second flank was used, shift the positions
+        if(mhfl['flank'] == 2):
+            cartoon_part1 = [p + mhfl['mhL'] + 1 for p in cartoon_part1]
+            cartoon_part2 = [p + mhfl['mhL'] + 1 for p in cartoon_part2]
+        # Sanity checks that the position are in the correct range
+        cartoon_part1[0] = max(cartoon_part1[0], 0)
+        # Update lines (if the two part overlaps merge them into one)
+        cartoon_output_lines_trimmed = []
+        if(cartoon_part1[1] + 1 > cartoon_part2[0]):
+            cartoon_part1[1] = cartoon_part2[1]
+            for line in cartoon_output_lines:
+                line = line[cartoon_part1[0]:min(cartoon_part1[1], len(line))]
+                cartoon_output_lines_trimmed.append(line)
+        else:
+            for line in cartoon_output_lines:
+                full_line = line
+                line = full_line[cartoon_part1[0]:cartoon_part1[1]]
+                line += '...'
+                line += full_line[cartoon_part2[0]:min(cartoon_part2[1], len(full_line))]
+                cartoon_output_lines_trimmed.append(line)
+        cartoon_output_lines = cartoon_output_lines_trimmed
+    # Write cartoon lines
+    for line in cartoon_output_lines:
+        cartoon_output_file.write(line + '\n')
     # Cartoon: protospacers sequence
     if(len(pams) > 0):
         cartoon_output_file.write('Protospacers:\n')
         for pam in pams:
-            cartoon_output_file.write(pam['proto'] + '\n')
+            cartoon_output_file.write(pam['proto'])
     cartoon_output_file.write('\n\n')
 
 variant_input_file.close()

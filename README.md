@@ -113,4 +113,4 @@ GGGCCGCGATGTGCAGGGCC
 
 ## Next
 
-- Add a more flexible PAM cut search.
+- Add a *"two-cuts"* mode for large variants.
