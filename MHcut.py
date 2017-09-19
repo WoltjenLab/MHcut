@@ -13,15 +13,10 @@ Spy_PAM_rev = "CC"
 def mhTest(var_seq, fl_seq):
     '''Test for presence of microhomology between two sequences.'''
     res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
-    # The flank sequence is smaller than the reference sequence, skip.
-    # Very very rare, e.g. the flank reaches the telomeres because the variant is huge (e.g. 2 Mbp).
-    # (Maybe we want to integrate this at some point)
-    if(len(fl_seq) < len(var_seq)):
-        return(res)
     # ALignm the two sequences
     al_full = []
-    for pos in range(len(var_seq)):
-        al_full.append(var_seq[pos] == fl_seq[pos])
+    for pos in range(min(len(var_seq), len(fl_seq))):
+        al_full.append(var_seq[pos] == fl_seq[pos] and var_seq[pos] != 'N')
     # First base must match, otherwise return the 'res' as is
     if(not al_full[0]):
         return(res)
@@ -59,9 +54,9 @@ def mhTest(var_seq, fl_seq):
 def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
     '''Look for PAM cuts between the MH regions.'''
     seq = fl1seq + varseq + fl2seq
-    search_range = [flsize - 1, flsize + len(varseq) - mhfl['mhL']]
+    search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['mhL']]
     if(mhfl['flank'] == 2):
-        search_range = [flsize + mhfl['mhL'] - 1, flsize + len(varseq)]
+        search_range = [len(fl1seq) + mhfl['mhL'] - 1, len(fl1seq) + len(varseq)]
     # Test each position: if it matched the motif and in the search range, add to list
     pams = []
     for pos in xrange(len(seq)-1):
@@ -254,7 +249,7 @@ for input_line in variant_input_file:
     cartoon_output_file.write(voutline + '\n')
     cartoon_output_lines = ['', '', '']
     # Cartoon: alignment line
-    white_spaces_before = flsize - mhfl['mhL']
+    white_spaces_before = len(fl1seq) - mhfl['mhL']
     if(mhfl['flank'] == 2):
         white_spaces_before += mhfl['mhL'] + 1
     white_spaces_before = ' ' * white_spaces_before
@@ -264,20 +259,21 @@ for input_line in variant_input_file:
     # Cartoon: sequence line
     cartoon_output_lines[1] = fl1seq + '-' + varseq + '-' + fl2seq
     # Cartoon: PAM position line
-    pam_cartoon = ['_' for i in range(2*flsize + vsize)]
+    pam_cartoon = ['_' for i in range(len(fl1seq) + len(fl2seq) + vsize)]
     for pam in pams:
         if(pam['strand'] == '+'):
             pam_cartoon[pam['cutPosition'] + 1] = '\\'
         else:
             pam_cartoon[pam['cutPosition']] = '/'
     pam_cartoon = ''.join(pam_cartoon)
-    cartoon_output_lines[2] = pam_cartoon[:flsize] + ' ' + pam_cartoon[flsize:(flsize + vsize)]
-    cartoon_output_lines[2] += ' ' + pam_cartoon[(flsize + vsize):]
+    cartoon_output_lines[2] = pam_cartoon[:len(fl1seq)] + ' '
+    cartoon_output_lines[2] += pam_cartoon[len(fl1seq):(len(fl1seq) + vsize)]
+    cartoon_output_lines[2] += ' ' + pam_cartoon[(len(fl1seq) + vsize):]
     # If the line is too long (large variants), trim the ends and middle
     flank_buffer = 10  # How many extra bases to show on the flanks (outside of the MH region)
     if(len(cartoon_output_lines[1]) > 2 * (flank_buffer + mhfl['mhL'] + args.maxTail)):
-        cartoon_part1 = [flsize - mhfl['mhL'] - flank_buffer, flsize + args.maxTail]
-        cartoon_part2 = [flsize + vsize - mhfl['mhL'] - args.maxTail, flsize + vsize + flank_buffer]
+        cartoon_part1 = [len(fl1seq) - mhfl['mhL'] - flank_buffer, len(fl1seq) + args.maxTail]
+        cartoon_part2 = [len(fl1seq) + vsize - mhfl['mhL'] - args.maxTail, len(fl1seq) + vsize + flank_buffer]
         # If second flank was used, shift the positions
         if(mhfl['flank'] == 2):
             cartoon_part1 = [p + mhfl['mhL'] + 1 for p in cartoon_part1]
