@@ -9,7 +9,6 @@ Spy_PAM = "GG"
 Spy_cut = -4
 Spy_PAM_rev = "CC"
 
-# Test again
 
 def mhTest(var_seq, fl_seq):
     '''Test for presence of microhomology between two sequences.'''
@@ -153,6 +152,8 @@ parser.add_argument('-minvarL', dest='minvarL', default=3, help='the minimum var
 parser.add_argument('-minMHL', dest='minMHL', default=3, help='the minimum microhomology length')
 parser.add_argument('-maxTail', dest='maxTail', default=50, help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
+parser.add_argument('-minhom', dest='minhom', default=0.8, help='the minimum homology ratio')
+parser.add_argument('-minm1L', dest='minm1L', default=2, help='the minimum length of first microhomology stretch')
 args = parser.parse_args()
 
 # Open connection to reference genome
@@ -221,8 +222,8 @@ for input_line in variant_input_file:
     else:
         mhfl = mhfl2
         mhfl['flank'] = 2
-    # If no MH or too small, jump to the next input line
-    if(mhfl['score'] == 0 or mhfl['mhL'] < args.minMHL):
+    # If no MH or too small, or too low MH ratio or too short first microhomology stretch, jump to the next input line
+    if(mhfl['score'] == 0 or mhfl['mhL'] < args.minMHL or mhfl['hom'] < args.minhom or mhfl['m1L'] < args.minm1L):
         continue
     # Find PAM motives
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail)
