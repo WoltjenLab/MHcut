@@ -9,6 +9,7 @@ Spy_PAM = "GG"
 Spy_cut = -4
 Spy_PAM_rev = "CC"
 
+# Test tt
 
 def mhTest(var_seq, fl_seq):
     '''Test for presence of microhomology between two sequences.'''
