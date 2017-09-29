@@ -148,12 +148,12 @@ parser = argparse.ArgumentParser(description='Find regions with microhomology an
 parser.add_argument('-var', dest='varfile', required=True,
                     help='the file with the variants location (BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True, help='the reference genome fasta file')
-parser.add_argument('-minvarL', dest='minvarL', default=3, help='the minimum variant length')
-parser.add_argument('-minMHL', dest='minMHL', default=3, help='the minimum microhomology length')
-parser.add_argument('-maxTail', dest='maxTail', default=50, help='the maximum hanging tail allowed')
+parser.add_argument('-minvarL', dest='minvarL', default=3, type=int, help='the minimum variant length')
+parser.add_argument('-minMHL', dest='minMHL', default=3, type=int, help='the minimum microhomology length')
+parser.add_argument('-maxTail', dest='maxTail', default=50, type=int, help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
-parser.add_argument('-minhom', dest='minhom', default=0.8, help='the minimum homology ratio')
-parser.add_argument('-minm1L', dest='minm1L', default=2, help='the minimum length of first microhomology stretch')
+parser.add_argument('-minhom', dest='minhom', default=0.8, type=float, help='the minimum homology ratio')
+parser.add_argument('-minm1L', dest='minm1L', default=2, type=int, help='the minimum length of first microhomology stretch')
 args = parser.parse_args()
 
 # Open connection to reference genome
