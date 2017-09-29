@@ -186,7 +186,7 @@ guide_output_file.write(gouthead)
 cartoon_output_file.write(outhead + '\n\n')
 
 # Start progress bar
-sys.stdout.write('[' + ' ' * 100 + ']')
+sys.stdout.write('Completed: 0%')
 
 # Read each line of the input file
 line_cpt = 0
@@ -195,7 +195,7 @@ for input_line in variant_input_file:
     line_cpt += 1
     if(line_cpt % input_nb_lines == 0):
         percent = line_cpt / input_nb_lines
-        sys.stdout.write('\r[' + '*' * percent + ' ' * (100 - percent) + ']')
+        sys.stdout.write('\rCompleted: ' + str(percent) + '%')
     input_line_raw = input_line.rstrip('\n')
     input_line = input_line_raw.split('\t')
     vstart = int(input_line[1])
