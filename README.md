@@ -79,6 +79,7 @@ Currently the columns of the output are:
 - *nbMM*: number of mismatches.
 - *mhDist*: distance between the end of MH and the variant boundary.
 - *MHseq1*/*MHseq2*: sequences of the MH.
+- *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
 
 ### The "guide" file
 

@@ -179,7 +179,7 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2'
+outhead = inhead + '\tvarL\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot'
 variant_output_file.write(outhead + '\n')
 gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\n'
 guide_output_file.write(gouthead)
@@ -228,7 +228,8 @@ for input_line in variant_input_file:
     # Find PAM motives
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail)
     # Map protospacers to the genome and keep unique ones
-    if(len(pams) > 0):
+    nb_pam_motives = len(pams)
+    if(nb_pam_motives > 0):
         pams = alignPamsBlast(pams, args.reffile)
         pams_filter = []
         for pam in pams:
@@ -242,7 +243,7 @@ for input_line in variant_input_file:
     voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(len(pams) > 0)
     voutline += '\t' + str(mhfl['mhL']) + '\t'
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
-    voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
+    voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2'] + '\t' + str(nb_pam_motives)
     variant_output_file.write(voutline + '\n')
     for pam in pams:
         guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
