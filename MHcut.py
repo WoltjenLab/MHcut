@@ -67,8 +67,8 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
         if(seq[pos:pos+2] == Spy_PAM_rev):
             cut_pos = pos - Spy_cut + len(Spy_PAM_rev) - 1
             strand = '-'
-        if(strand and cut_pos >= search_range[0] and cut_pos < search_range[0] + maxTail
-           and cut_pos < search_range[1] and cut_pos >= search_range[1] - maxTail):
+        if(strand and cut_pos >= search_range[0] and cut_pos < search_range[1]
+           and (cut_pos < search_range[0] + maxTail or cut_pos >= search_range[1] - maxTail)):
             if(strand == '+'):
                 proto_seq = seq[(cut_pos - 20 - Spy_cut):(cut_pos - Spy_cut)]
             else:
