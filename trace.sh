@@ -33,4 +33,4 @@ python MHcut.py -var clinvar-grch38-pathogenic-deletion.tsv -ref hg38.fa -out cl
 cd ~/Documents/"02 Research project"/"07 MHcut”/“01 Data”
 python2.7 ../MHcutGitHub/MHcut.py -var variant_summary-grch38-pathogenic-deletion.tsv -ref hg38.fa -out ../"02 Output"/clinvar-grch38-pathogenic-deletion
 
-####Do not copy commands from here into Terminal, “ “ spaces are not formatted correctly
+#### Do not copy commands from here into Terminal, “ “ spaces are not formatted correctly
