@@ -40,7 +40,7 @@ def mhTest(var_seq, fl_seq):
     res['mhL'] = len(al_trimmed)
     res['hom'] = float(nb_match) / res['mhL']
     res['nbMM'] = res['mhL'] - nb_match
-    res['mhdist'] = len(al_full) - res['mhL']  # this is the two hologous sequences
+    res['mhdist'] = len(al_full) - res['mhL']  # this is the two homologous sequences
     # Compute a score, later used to choose which flank has the best MH
     res['score'] = res['m1L'] + nb_match
     # Cartoon of the MH (e.g. ||x|)
@@ -54,9 +54,9 @@ def mhTest(var_seq, fl_seq):
 def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
     '''Look for PAM cuts between the MH regions.'''
     seq = fl1seq + varseq + fl2seq
-    search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['mhL']]
+    search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['m1L']]
     if(mhfl['flank'] == 2):
-        search_range = [len(fl1seq) + mhfl['mhL'] - 1, len(fl1seq) + len(varseq)]
+        search_range = [len(fl1seq) + mhfl['m1L'] - 1, len(fl1seq) + len(varseq)]
     # Test each position: if it matched the motif and in the search range, add to list
     pams = []
     for pos in xrange(len(seq)-1):
@@ -153,7 +153,7 @@ parser.add_argument('-minMHL', dest='minMHL', default=3, type=int, help='the min
 parser.add_argument('-maxTail', dest='maxTail', default=50, type=int, help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
 parser.add_argument('-minhom', dest='minhom', default=0.8, type=float, help='the minimum homology ratio')
-parser.add_argument('-minm1L', dest='minm1L', default=2, type=int, help='the minimum length of first microhomology stretch')
+parser.add_argument('-minm1L', dest='minm1L', default=3, type=int, help='the minimum length of first microhomology stretch')
 args = parser.parse_args()
 
 # Open connection to reference genome
