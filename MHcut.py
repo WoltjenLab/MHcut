@@ -275,9 +275,15 @@ for input_line in variant_input_file:
     pam_cartoon = ['_' for i in range(len(fl1seq) + len(fl2seq) + vsize)]
     for pam in pams:
         if(pam['strand'] == '+'):
-            pam_cartoon[pam['cutPosition'] + 1] = '\\'
+            if(pam_cartoon[pam['cutPosition'] + 1] != '_'):
+                pam_cartoon[pam['cutPosition'] + 1] = 'X'
+            else:
+                pam_cartoon[pam['cutPosition'] + 1] = '\\'
         else:
-            pam_cartoon[pam['cutPosition']] = '/'
+            if(pam_cartoon[pam['cutPosition']] != '_'):
+                pam_cartoon[pam['cutPosition']] = 'X'
+            else:
+                pam_cartoon[pam['cutPosition']] = '/'
     pam_cartoon = ''.join(pam_cartoon)
     cartoon_output_lines[2] = pam_cartoon[:len(fl1seq)] + ' '
     cartoon_output_lines[2] += pam_cartoon[len(fl1seq):(len(fl1seq) + vsize)]

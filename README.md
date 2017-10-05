@@ -101,7 +101,7 @@ Named `PREFIX-cartoons.tsv`, the "cartoon" file has one paragraph per variant wi
 1. The corresponding line from the "variant" file (e.g. MH metrics, PAM found or not).
 1. The location of the micro-homology. `|` means a match, `x` a mismatch.
 1. The sequence of the flanks and variant. `-` to stress the variant's limits. Eventually `...` is the middle part of a large variant that is not shown for clarity purpose.
-1. The location of valid PAM cuts. `\` and `/` depending on the strand of the PAM motif.
+1. The location of valid PAM cuts. `\` and `/` depending on the strand of the PAM motif. `X` means there are cuts on each side of the base in opposite strand.
 1. A list of valid protospacers if any.
 
 For example, a 3 bases perfect MH with 3 valid PAM cuts:
@@ -119,5 +119,4 @@ GGGCCGCGATGTGCAGGGCC
 
 ## Next
 
-- Improve cartoon. Problem: when consecutive PAM cuts in opposite strand, only one is showed. E.g. use `X` to represent `\` + `/`.
 - Add a *"two-cuts"* mode for large variants.
