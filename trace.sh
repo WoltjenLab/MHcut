@@ -19,7 +19,7 @@ wget ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
 ## Some records have 'na' for chromosome, don't take those.
 ## Also add a 'chr' prefix to the chromosome name to match the genome reference fasta.
 ## Keep the gene name, RS/dbSNP and dbVar extra columns.
-zcat variant_summary.txt.gz | awk 'BEGIN{FS="\t"; OFS="\t"; print "Chromosome\tStart\tStop\tGeneSymbol\tdbSNP\tdbVar"}{if($17=="GRCh38" && $19!="na" && $2=="deletion" && $7=="Pathogenic"){print "chr"$19,$20,$21,$5,$10,$11}}' | sort -u > clinvar-grch38-pathogenic-deletion.tsv
+zcat variant_summary.txt.gz | awk 'BEGIN{FS="\t"; OFS="\t"; print "Chromosome\tStart\tStop\tGeneSymbol\tdbSNP\tdbVar\treviewStatus\tnbSubmitters"}{if($17=="GRCh38" && $19!="na" && $2=="deletion" && $7=="Pathogenic"){print "chr"$19,$20,$21,$5,$10,$11,$25,$26}}' | sort -u > clinvar-grch38-pathogenic-deletion.tsv
 
 ## Optional: check if duplicated variants (at the same position)
 wc -l clinvar-grch38-pathogenic-deletion.tsv
