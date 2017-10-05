@@ -91,6 +91,8 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *mm0* the number of position in the genome where the sequence align with no mismatches.
 - *mm1* the number of position in the genome where the sequence align with 1 mismatches.
 - *mm0* the number of position in the genome where the sequence align with 2 mismatches.
+- *m1Dist1* and *m1Dist2*: the distance between the PAM cut the the left or right stretch of perfect match, respectively.
+- *mhDist1* and *mhDist2*: the distance between the PAM cut the the left or right micro-homology, respectively.
 
 ### The "cartoon" file
 
@@ -117,4 +119,5 @@ GGGCCGCGATGTGCAGGGCC
 
 ## Next
 
+- Improve cartoon. Problem: when consecutive PAM cuts in opposite strand, only one is showed. E.g. use `X` to represent `\` + `/`.
 - Add a *"two-cuts"* mode for large variants.

@@ -55,8 +55,10 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
     '''Look for PAM cuts between the MH regions.'''
     seq = fl1seq + varseq + fl2seq
     search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['m1L']]
+    reduced_search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['mhL']]
     if(mhfl['flank'] == 2):
         search_range = [len(fl1seq) + mhfl['m1L'] - 1, len(fl1seq) + len(varseq)]
+        reduced_search_range = [len(fl1seq) + mhfl['mhL'] - 1, len(fl1seq) + len(varseq)]
     # Test each position: if it matched the motif and in the search range, add to list
     pams = []
     for pos in xrange(len(seq)-1):
@@ -73,7 +75,13 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
                 proto_seq = seq[(cut_pos - 20 - Spy_cut):(cut_pos - Spy_cut)]
             else:
                 proto_seq = seq[(cut_pos + Spy_cut + 2):(cut_pos + 20 + Spy_cut + 2)]
-            pams.append({'cutPosition': cut_pos, 'strand': strand, 'proto': proto_seq})
+            pam_info = {'cutPosition': cut_pos, 'strand': strand, 'proto': proto_seq}
+            # Distance to MH on each side using first stretch of perfect match or the extended MH
+            pam_info['m1Dist1'] = cut_pos - search_range[0]
+            pam_info['m1Dist2'] = search_range[1] - cut_pos - 1
+            pam_info['mhDist1'] = cut_pos - reduced_search_range[0]
+            pam_info['mhDist2'] = reduced_search_range[1] - cut_pos - 1
+            pams.append(pam_info)
     return(pams)
 
 
@@ -181,7 +189,7 @@ variant_input_file = open(args.varfile, 'r')
 inhead = variant_input_file.next().rstrip('\n')
 outhead = inhead + '\tvarL\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot'
 variant_output_file.write(outhead + '\n')
-gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\n'
+gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\n'
 guide_output_file.write(gouthead)
 cartoon_output_file.write(outhead + '\n\n')
 
@@ -247,7 +255,9 @@ for input_line in variant_input_file:
     variant_output_file.write(voutline + '\n')
     for pam in pams:
         guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
-        guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']) + '\n')
+        guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']))
+        guide_output_file.write('\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
+        guide_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']) + '\n')
     # Write the cartoon
     cartoon_output_file.write(voutline + '\n')
     cartoon_output_lines = ['', '', '']
@@ -303,9 +313,10 @@ for input_line in variant_input_file:
         cartoon_output_file.write(line + '\n')
     # Cartoon: protospacers sequence
     if(len(pams) > 0):
-        cartoon_output_file.write('Protospacers:\n')
+        cartoon_output_file.write('Protospacers, m1Dist1, m1Dist2, mhDist1, mhDist2:\n')
         for pam in pams:
-            cartoon_output_file.write(pam['proto'] + '\n')
+            cartoon_output_file.write(pam['proto'] + '\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
+            cartoon_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']) + '\n')
     cartoon_output_file.write('\n\n')
 
 print '\nDone.\n'
