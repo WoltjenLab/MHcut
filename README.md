@@ -72,7 +72,6 @@ Named `PREFIX-variants.tsv`, the "variant" file  has one line per input variant 
 Currently the columns of the output are:
 
 - The columns of the input `.tsv` file. For example: *chr*, *start*, *end*, *rsid*, *gene*.
-- *pam*: True is there is a valid PAM cut with unique protospacer. False otherwise.
 - *mhL*: MH length.
 - *mh1L*: number of first consecutive matches.
 - *hom*: proportion of matches.
@@ -80,6 +79,7 @@ Currently the columns of the output are:
 - *mhDist*: distance between the end of MH and the variant boundary.
 - *MHseq1*/*MHseq2*: sequences of the MH.
 - *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
+- *bestPamHet*: the smallest heterology, i.e. distance between a valid PAM and both MH ends. For quick filtering only. For more flexibility use the information in the "guide" file.
 
 ### The "guide" file
 

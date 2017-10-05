@@ -187,7 +187,7 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tpam\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot'
+outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet'
 variant_output_file.write(outhead + '\n')
 gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\n'
 guide_output_file.write(gouthead)
@@ -237,6 +237,7 @@ for input_line in variant_input_file:
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail)
     # Map protospacers to the genome and keep unique ones
     nb_pam_motives = len(pams)
+    best_pam_het = 'NA'
     if(nb_pam_motives > 0):
         pams = alignPamsBlast(pams, args.reffile)
         pams_filter = []
@@ -244,14 +245,19 @@ for input_line in variant_input_file:
             # This where to define how unique the protospacer must be
             # Here there must be only one position in the genome aligning perfectly
             if pam['mm0'] == 1:
+                pam_het = max(pam['mhDist1'], pam['mhDist2'])
+                if(best_pam_het == 'NA'):
+                    best_pam_het = pam_het
+                else:
+                    best_pam_het = min(best_pam_het, pam_het)
                 pams_filter.append(pam)
         pams = pams_filter
     # Write in output files
     # Add/remove columns here (without forgetting the header)
-    voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(len(pams) > 0)
-    voutline += '\t' + str(mhfl['mhL']) + '\t'
+    voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
-    voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2'] + '\t' + str(nb_pam_motives)
+    voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
+    voutline += '\t' + str(nb_pam_motives) + '\t' + str(best_pam_het)
     variant_output_file.write(voutline + '\n')
     for pam in pams:
         guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
