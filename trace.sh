@@ -34,3 +34,15 @@ cd ~/Documents/"02 Research project"/"07 MHcut”/“01 Data”
 python2.7 ../MHcutGitHub/MHcut.py -var variant_summary-grch38-pathogenic-deletion.tsv -ref hg38.fa -out ../"02 Output"/clinvar-grch38-pathogenic-deletion
 
 #### Do not copy commands from here into Terminal, “ “ spaces are not formatted correctly
+
+
+## Comprehensive run including MH down to 1 bp.
+python MHcut.py -var clinvar-grch38-pathogenic-deletion.tsv -ref hg38.fa -out clinvar-grch38-pathogenic-deletion-1bp -minMHL 1 -minm1L 1 -minvarL 1
+
+
+## Select all deletions with GRCh38 coordinates.
+## Some records have 'na' for chromosome, don't take those.
+## Also add a 'chr' prefix to the chromosome name to match the genome reference fasta.
+## Keep the gene name, RS/dbSNP and dbVar extra columns.
+zcat variant_summary.txt.gz | awk 'BEGIN{FS="\t"; OFS="\t"; print "Chromosome\tStart\tStop\tGeneSymbol\tdbSNP\tdbVar\treviewStatus\tnbSubmitters"}{if($17=="GRCh38" && $19!="na" && $2=="deletion"){print "chr"$19,$20,$21,$5,$10,$11,$25,$26}}' | sort -u > clinvar-grch38-all-deletion.tsv
+

@@ -1,0 +1,268 @@
+---
+title: "ClinVar exploration"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, tidy=TRUE)
+```
+
+# ClinVar exploration
+
+```{r load}
+## For data manipulation
+library(dplyr)
+library(magrittr)
+
+## For graphs and tables
+library(ggplot2)
+library(knitr)
+library(RColorBrewer)
+palset = c(brewer.pal(9, 'Set1'), brewer.pal(8, 'Set2'))
+
+## Functions
+winsor <- function(x, u=10){
+  if(any(x>u)) x[x>u] = u
+  x
+}
+
+## Import ClinVar variants
+cv = read.table('../variant_summary.txt.gz', header=TRUE, sep='\t', as.is=TRUE, quote='', comment='')
+cv %<>% filter(Assembly=='GRCh38')
+```
+
+We look at ClinVar variants for the GRCh38 assembly.
+
+## Variant types
+
+```{r types}
+cv %>% group_by(Type) %>% summarize(variant=n()) %>% ggplot(aes(x=reorder(Type, variant), y=variant)) + geom_bar(stat='identity') + theme_bw() + coord_flip() + xlab('variant type')
+```
+
+## Duplicates ?
+
+Any variants annotated several times ?
+(Defining a variant in term of its location/coordinates)
+
+```{r dup}
+dup.df = cv %>% group_by(Chromosome, Start, Stop) %>% summarize(nbentry=n()) %>% ungroup
+ggplot(dup.df, aes(x=factor(nbentry))) + geom_bar() + theme_bw() + xlab('number of entry with same coordinates') + ylab('variants')
+```
+
+Most of them are fine but a few are annotated twice.
+Some are even annotated more than 10 times !?
+
+### Annotated twice ?
+
+Quick look at a few random variants that are annotated twice:
+
+```{r dup2}
+dup2.ex = dup.df %>% filter(nbentry==2) %>% sample_n(5)
+cv %>% select(X.AlleleID, Chromosome, Start, Stop, Type, ReferenceAllele, AlternateAllele) %>% merge(dup2.ex) %>% kable
+```
+
+It seems it's either because the type is different or the SNV alleles are different.
+Of note, with their index strategy, SNV and 1 bp deletion have the same coordinate...
+
+```{r dup2stats}
+dup.df = cv %>% group_by(Chromosome, Start, Stop) %>% summarize(nbentry=n(), nbtypes=length(unique(Type)), nballeles=length(unique(AlternateAllele)), types=paste(sort(unique(Type)), collapse=';')) %>% ungroup
+
+dup.df %>% filter(nbentry==2) %>% group_by(types) %>% summarize(dupvariant=n()) %>% ggplot(aes(x=reorder(types, dupvariant), y=dupvariant)) + geom_bar(stat='identity') + theme_bw() + coord_flip() + xlab('variant types with same coordinates')
+```
+
+Actually it can also be a locus annotated as deletion/duplication, or deletion/indel. 
+
+### Annotated >10 times !?
+
+```{r dup10plus}
+dup.df %>% filter(nbentry>10) %>% group_by(types) %>% summarize(dupvariant=n()) %>% ggplot(aes(x=reorder(types, dupvariant), y=dupvariant)) + geom_bar(stat='identity') + theme_bw() + coord_flip() + xlab('variant types')
+```
+
+It's only CNVs, insertions and NT expansions.
+
+
+### Deletions
+
+If we focus on *deletions*, we should avoid the SNV, CNV and insertion duplicates.
+But do we still get duplicates ?
+
+```{r dupdel}
+dup.del = cv %>% filter(Type=='deletion') %>% group_by(Chromosome, Start, Stop) %>% summarize(nbentry=n()) %>% ungroup
+dup.del %>% group_by(nbentry) %>% summarize(variant=n()) %>% kable
+```
+
+Yes but just a couple:
+
+```{r dupdelex}
+dupdel.ex = dup.del %>% filter(nbentry>1)
+cv %>% select(X.AlleleID, Chromosome, Start, Stop, ClinicalSignificance, RS...dbSNP., nsv.esv..dbVar.) %>% merge(dupdel.ex) %>% kable
+```
+
+## Clinical significance
+
+```{r clinsig}
+clinsig = cv %>% group_by(ClinicalSignificance) %>% summarize(variant=n()) %>% arrange(desc(variant))
+clinsig %<>% mutate(ClinicalSignificance.simple=ifelse(ClinicalSignificance %in% head(clinsig$ClinicalSignificance,10), ClinicalSignificance, 'Other ClinSig'))
+clinsig %>% ggplot(aes(x=reorder(ClinicalSignificance.simple, variant, sum), y=variant)) + geom_bar(stat='identity') + coord_flip() + theme_bw() + xlab('')
+```
+
+`r nrow(clinsig)` different types of *ClinicalSignificance* but just a few major ones.
+In the previous graph, all the minor *ClinicalSignificance* (not in top 10) were merged into one called *Other ClinSig*.
+
+Same graph for deletions only:
+
+```{r clinsigdel}
+clinsig.del = cv %>% filter(Type=='deletion') %>% group_by(ClinicalSignificance) %>% summarize(variant=n()) %>% arrange(desc(variant))
+clinsig.del %<>% mutate(ClinicalSignificance.simple=ifelse(ClinicalSignificance %in% head(clinsig.del$ClinicalSignificance,10), ClinicalSignificance, 'Other ClinSig'))
+clinsig.del %>% ggplot(aes(x=reorder(ClinicalSignificance.simple, variant, sum), y=variant)) + geom_bar(stat='identity') + coord_flip() + theme_bw() + xlab('') + ggtitle('Deletions')
+```
+
+
+### Containing *pathogenic*
+
+Looking for any definition that include the word *pathogenic*.
+
+```{r clinsigpath}
+clinsig %>% filter(grepl('pathogenic', ClinicalSignificance, ignore.case = TRUE)) %>% ggplot(aes(x=reorder(ClinicalSignificance, variant, sum), y=variant)) + geom_bar(stat='identity') + coord_flip() + theme_bw() + xlab('')
+```
+
+Some definitions specify *pathogenic* and something else, for example `Pathogenic, risk factor`.
+It just a few variants but we might want to include them with the `Pathogenic` group.
+
+```{r pathflexible}
+commaSplitTest <- function(entry, sep=',', target='Pathogenic'){
+  lapply(strsplit(entry, sep), function(sentry) any(sentry %in% target)) %>% unlist
+}
+
+clinsig %>% filter(commaSplitTest(ClinicalSignificance)) %>% ggplot(aes(x=reorder(ClinicalSignificance, variant, sum), y=variant)) + geom_bar(stat='identity') + coord_flip() + theme_bw() + xlab('')
+```
+
+
+## Variant size
+
+Let's remove the *single nucleotide variant* type.
+
+```{r size}
+cvl = cv %>% filter(Type != 'single nucleotide variant') %>% mutate(size=Stop-Start+1)
+
+ggplot(cvl, aes(x=size, fill=Type)) + geom_histogram() + theme_bw() + scale_x_log10() + xlab('variant size (bp)') + scale_fill_manual(values=palset) + ylab('variant')
+ggplot(cvl, aes(x=winsor(size,20), fill=Type)) + geom_histogram(binwidth=1) + theme_bw() + xlab('variant size (bp) winsorized at 20 bp') + ylab('variant') + scale_fill_manual(values=palset) + scale_x_continuous(breaks=0:20)
+```
+
+### Deletions
+
+```{r delsize}
+cvl %>% filter(Type %in% c('deletion', 'copy number loss')) %>% ggplot(aes(x=size)) + geom_histogram() + theme_bw() + scale_x_log10() + xlab('variant size (bp)') + ylab('variant') + facet_grid(Type~., scales='free')
+```
+
+All *copy number loss* variants are large.
+
+### 3 bp pattern
+
+
+```{r size3}
+cvl %>% filter(size>1, size<21) %>% ggplot(aes(x=size)) + geom_vline(xintercept=seq(3,20,3), linetype=2, alpha=.4) + geom_histogram(binwidth=1) + theme_bw() + facet_wrap(~Type, scales='free')
+```
+
+*Note: I removed variants of size 1 bp for clarity.*
+
+Globally there is no striking "3 bp" pattern except for NT expansions that are mostly 3 bp long.
+
+Let's look at pathogenic variants.
+
+```{r size3path}
+cvl %>% filter(ClinicalSignificance=='Pathogenic', size>1, size<21, Type %in% c('deletion', 'duplication', 'indel')) %>% ggplot(aes(x=size)) + geom_vline(xintercept=seq(3,20,3), linetype=2, alpha=.4) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(Type~., scales='free')
+```
+
+Pathogenic deletions and duplications are less likely to be multiple of 3 bp.
+Kind of expected because these variants doesn't cause frame-shifts and might be more tolerated.
+
+Indels don't show this pattern but it might be because they are annotated differently.
+For example with a reference allele of `TATTT` and alternate allele of `TA`, they would still be annotated in a region of size 5 bp in the database although it represents a 3 bp deletion.
+If we subtract the length of the alleles we should get the pattern:
+
+```{r indel3bp}
+indels = cv %>% filter(Type=='indel') %>% mutate(size=nchar(AlternateAllele)-nchar(ReferenceAllele))
+indels %>% filter(ClinicalSignificance=='Pathogenic', abs(size)>1, abs(size)<16) %>% ggplot(aes(x=size)) + geom_vline(xintercept=seq(-15,15,3), linetype=2, alpha=.4) + geom_histogram(binwidth=1) + theme_bw() + xlab('indel size (alt allele size - ref allele size)') + ylab('indel')
+```
+
+Yep.
+
+## Support
+
+```{r support}
+ggplot(cv, aes(x=reorder(ReviewStatus,ReviewStatus,length), fill=ClinicalSignificance=='Pathogenic')) + geom_bar() + coord_flip() + theme_bw() + xlab('ReviewStatus') + ylab('variant') + scale_fill_brewer(palette='Set1', name='Pathogenic ?', labels=c('no','yes'))
+cv %>% filter(Type=='deletion') %>% ggplot(aes(x=reorder(ReviewStatus,ReviewStatus,length), fill=ClinicalSignificance=='Pathogenic')) + geom_bar() + coord_flip() + theme_bw() + xlab('ReviewStatus') + ylab('deletion') + ggtitle('Deletions') + scale_fill_brewer(palette='Set1', name='Pathogenic ?', labels=c('no','yes'))
+```
+
+## Chromosome distribution
+
+```{r chr}
+chr.df = cv %>% group_by(Chromosome, Type, ClinicalSignificance) %>% summarize(variant=n()) %>% ungroup %>% mutate(Chromosome=factor(Chromosome, levels=c(1:22, 'X','Y','MT','Un')))
+
+ggplot(chr.df, aes(x=Chromosome, y=variant, fill=ClinicalSignificance=='Pathogenic')) + geom_bar(stat='identity') + theme_bw() + scale_fill_brewer(palette='Set1', name='Pathogenic ?', labels=c('no','yes')) + ylab('number of variants')
+ggplot(chr.df, aes(x=Chromosome, y=variant, fill=ClinicalSignificance=='Pathogenic')) + geom_bar(position='fill',stat='identity') + theme_bw() + scale_fill_brewer(palette='Set1', name='Pathogenic ?', labels=c('no','yes')) + ylab('propotion of variants')
+
+chr.df %>% filter(Type=='deletion') %>% ggplot(aes(x=Chromosome, y=variant, fill=ClinicalSignificance=='Pathogenic')) + geom_bar(stat='identity') + theme_bw() + scale_fill_brewer(palette='Set1', name='Pathogenic ?', labels=c('no','yes')) + ylab('number of variants') + ggtitle("Deletions")
+chr.df %>% filter(Type=='deletion') %>% ggplot(aes(x=Chromosome, y=variant, fill=ClinicalSignificance=='Pathogenic')) + geom_bar(position='fill',stat='identity') + theme_bw() + scale_fill_brewer(palette='Set1', name='Pathogenic ?', labels=c('no','yes')) + ylab('propotion of variants') + ggtitle("Deletions")
+```
+
+*To do: normalize each chromosome by its number of genes.*
+
+## Gene's affected
+
+Just out of curiosity, are there certain genes that have more pathogenic variants than others ?
+
+```{r topgenes}
+gene.df = cv %>% filter(ClinicalSignificance=='Pathogenic') %>% group_by(GeneSymbol) %>% summarize(variant=n(), deletion=sum(Type=='deletion'))
+
+ggplot(gene.df, aes(x=variant)) + geom_histogram() + theme_bw() + ylab('gene') + scale_x_log10()
+gene.df %>% arrange(desc(variant)) %>% head %>% kable
+
+ggplot(gene.df, aes(x=deletion)) + geom_histogram() + theme_bw() + ylab('gene') + scale_x_log10() + ggtitle('Deletion')
+gene.df %>% arrange(desc(deletion)) %>% head %>% kable
+```
+
+## Discussion
+
+### Flexible filtering of *pathogenic* variants
+
+If we include the few variants that are annotated as *Pathogenic* and something else, how many pathogenic *deletions* are we gaining ?
+
+```{r gainpath}
+cv %>% filter(commaSplitTest(ClinicalSignificance), Type=='deletion') %>% group_by(ClinicalSignificance) %>% summarize(deletion=n()) %>% arrange(desc(deletion)) %>% kable
+```
+
+Just 20 variants.
+
+### Include other types of deletions ?
+
+If we are interested in deletions, how much are we gaining by including different variants types versus only the *deletion* type ?
+
+We could think of including *copy number loss* or *indels*.
+
+#### Could we use "indel" deletions ?
+
+Short answer: No.
+
+For indels it's a bit tricky to get the deletion coordinates.
+With a reference allele of `TATTT` and alternate of `TA` we can guess but what if we have something like `TGAGTAATGTAAG` and `GG` (real variant) ?
+
+Actually maybe they are all "difficult" and would have been annotated as *deletion* if it was easy to guess the exact location.
+Let's check just in case.
+I'll look for variants where the alternate allele is exactly included in the reference allele and on a "side".
+
+```{r indeleasy}
+cv %>% filter(Type=='indel', nchar(ReferenceAllele)>nchar(AlternateAllele)) %>% mutate(refU=substr(ReferenceAllele, 1, nchar(AlternateAllele)), refD=substr(ReferenceAllele, nchar(ReferenceAllele)-nchar(AlternateAllele)+1, nchar(ReferenceAllele))) %>% mutate(easyDeletion=AlternateAllele==refU | AlternateAllele==refD) %>% group_by(easyDeletion) %>% summarize(indel=n()) %>% kable
+```
+
+I found none so indels are deletions were the breakpoints.
+
+#### Copy number loss
+
+We would gain a lot of large deletions by including *copy number loss* variants.
+I'm not sure if we can trust the breakpoints location as much as small deletions though.
+In the [instructions to submit to ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/docs/spreadsheet/), it's written that *Start* and *Stop* columns should be used when the exact breakpoint is known.
+It's also writtent that *copy number loss* variants are based on arrays so I don't think the breakpoints are accurate (except if the variant were further validated and breakpoints fine-tuned).
