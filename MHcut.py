@@ -5,9 +5,8 @@ import os
 import sys
 # import re
 
-Spy_PAM = "GG"
-Spy_cut = -4
-Spy_PAM_rev = "CC"
+dnacomp = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'W': 'W', 'S': 'S', 'M': 'K',
+           'K': 'M', 'R': 'Y', 'Y': 'R', 'V': 'B', 'B': 'V', 'H': 'D', 'D': 'H', 'N': 'N'}
 
 
 def mhTest(var_seq, fl_seq):
@@ -51,7 +50,44 @@ def mhTest(var_seq, fl_seq):
     return(res)
 
 
-def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
+def aligned(seq, pamseq):
+    align = True
+    pos = 0
+    while(align and pos < len(pamseq)):
+        if(pamseq[pos] != 'N'):
+            align = pamseq[pos] == seq[pos]
+        if(pamseq[pos] == 'W'):
+            align = seq[pos] == 'A' or seq[pos] == 'T'
+        if(pamseq[pos] == 'S'):
+            align = seq[pos] == 'G' or seq[pos] == 'C'
+        if(pamseq[pos] == 'M'):
+            align = seq[pos] == 'A' or seq[pos] == 'C'
+        if(pamseq[pos] == 'K'):
+            align = seq[pos] == 'G' or seq[pos] == 'T'
+        if(pamseq[pos] == 'R'):
+            align = seq[pos] == 'A' or seq[pos] == 'G'
+        if(pamseq[pos] == 'Y'):
+            align = seq[pos] == 'T' or seq[pos] == 'C'
+        if(pamseq[pos] == 'V'):
+            align = seq[pos] == 'G' or seq[pos] == 'C' or seq[pos] == 'A'
+        if(pamseq[pos] == 'B'):
+            align = seq[pos] == 'T' or seq[pos] == 'C' or seq[pos] == 'G'
+        if(pamseq[pos] == 'H'):
+            align = seq[pos] == 'T' or seq[pos] == 'C' or seq[pos] == 'A'
+        if(pamseq[pos] == 'D'):
+            align = seq[pos] == 'T' or seq[pos] == 'G' or seq[pos] == 'A'
+        pos += 1
+    return align
+
+
+def revComp(seq):
+    res = ''
+    for pos in xrange(len(seq)):
+        res = dnacomp[seq[pos]] + res
+    return res
+
+
+def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamseq_rev, pamcut):
     '''Look for PAM cuts between the MH regions.'''
     seq = fl1seq + varseq + fl2seq
     search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['m1L']]
@@ -61,20 +97,20 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail):
         reduced_search_range = [len(fl1seq) + mhfl['mhL'] - 1, len(fl1seq) + len(varseq)]
     # Test each position: if it matched the motif and in the search range, add to list
     pams = []
-    for pos in xrange(len(seq)-1):
+    for pos in xrange(len(seq)-len(pamseq)+1):
         proto_seq = strand = cut_pos = False
-        if(seq[pos:pos+2] == Spy_PAM):
-            cut_pos = pos + Spy_cut - 1
+        if(aligned(seq[pos:pos+len(pamseq)], pamseq)):
+            cut_pos = pos + pamcut - 1
             strand = '+'
-        if(seq[pos:pos+2] == Spy_PAM_rev):
-            cut_pos = pos - Spy_cut + len(Spy_PAM_rev) - 1
+        if(aligned(seq[pos:pos+len(pamseq)], pamseq_rev)):
+            cut_pos = pos - pamcut + len(pamseq_rev) - 1
             strand = '-'
         if(strand and cut_pos >= search_range[0] and cut_pos < search_range[1]
            and (cut_pos < search_range[0] + maxTail or cut_pos >= search_range[1] - maxTail)):
             if(strand == '+'):
-                proto_seq = seq[(cut_pos - 20 - Spy_cut):(cut_pos - Spy_cut)]
+                proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1)]
             else:
-                proto_seq = seq[(cut_pos + Spy_cut + 2):(cut_pos + 20 + Spy_cut + 2)]
+                proto_seq = seq[(cut_pos + pamcut + 1):(cut_pos + 20 + pamcut + 1)]
             pam_info = {'cutPosition': cut_pos, 'strand': strand, 'proto': proto_seq}
             # Distance to MH on each side using first stretch of perfect match or the extended MH
             pam_info['m1Dist1'] = cut_pos - search_range[0]
@@ -156,13 +192,23 @@ parser = argparse.ArgumentParser(description='Find regions with microhomology an
 parser.add_argument('-var', dest='varfile', required=True,
                     help='the file with the variants location (BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True, help='the reference genome fasta file')
-parser.add_argument('-minvarL', dest='minvarL', default=3, type=int, help='the minimum variant length')
-parser.add_argument('-minMHL', dest='minMHL', default=3, type=int, help='the minimum microhomology length')
-parser.add_argument('-maxTail', dest='maxTail', default=50, type=int, help='the maximum hanging tail allowed')
-parser.add_argument('-out', dest='outprefix', required=True, help='the prefix for the output files')
-parser.add_argument('-minhom', dest='minhom', default=0.8, type=float, help='the minimum homology ratio')
-parser.add_argument('-minm1L', dest='minm1L', default=3, type=int, help='the minimum length of first microhomology stretch')
+parser.add_argument('-minvarL', dest='minvarL', default=3, type=int,
+                    help='the minimum variant length')
+parser.add_argument('-minMHL', dest='minMHL', default=3, type=int,
+                    help='the minimum microhomology length')
+parser.add_argument('-maxTail', dest='maxTail', default=50, type=int,
+                    help='the maximum hanging tail allowed')
+parser.add_argument('-out', dest='outprefix', required=True,
+                    help='the prefix for the output files')
+parser.add_argument('-minhom', dest='minhom', default=0.8, type=float,
+                    help='the minimum homology ratio')
+parser.add_argument('-minm1L', dest='minm1L', default=3, type=int,
+                    help='the minimum length of first microhomology stretch')
+parser.add_argument('-PAM', dest='pamseq', default='NGG', help='the PAM motif')
+parser.add_argument('-PAMcut', dest='pamcut', default=-3, type=int,
+                    help='the cut position relative to the PAM motif')
 args = parser.parse_args()
+
 
 # Open connection to reference genome
 reffa = Fasta(args.reffile)
@@ -195,6 +241,8 @@ cartoon_output_file.write(outhead + '\n\n')
 
 # Start progress bar
 sys.stdout.write('Completed: 0%')
+
+pamseq_rev = revComp(args.pamseq)
 
 # Read each line of the input file
 line_cpt = 0
@@ -234,7 +282,7 @@ for input_line in variant_input_file:
     if(mhfl['score'] == 0 or mhfl['mhL'] < args.minMHL or mhfl['hom'] < args.minhom or mhfl['m1L'] < args.minm1L):
         continue
     # Find PAM motives
-    pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail)
+    pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, pamseq_rev, args.pamcut)
     # Map protospacers to the genome and keep unique ones
     nb_pam_motives = len(pams)
     best_pam_het = 'NA'

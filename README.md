@@ -57,11 +57,13 @@ The required parameters are:
 
 Other optional parameters:
 
-- *-minvarL* the minimum length for a variant to be considered. Default is 3.
-- *-minMHL* the minimum length of the MH. Default is 3.
-- *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at 50. Relevant for large variants.
-- *-minhom* the minimum ratio of homology in the whole microhomology. Default is 0.8.
-- *-minm1L* the minimum length of the first stretch if the microhomology. Default is 2.
+- *-minvarL* the minimum length for a variant to be considered. Default is `3`.
+- *-minMHL* the minimum length of the MH. Default is `3`.
+- *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at `50`. Relevant for large variants.
+- *-minhom* the minimum ratio of homology in the whole microhomology. Default is `0.8`.
+- *-minm1L* the minimum length of the first stretch if the microhomology. Default is `2`.
+- *-PAM* the PAM sequence. Default is `NGG`.
+- *-PAMcut* the cut position relative to the PAM motif. Default is `-3`
 
 ## Output
 
