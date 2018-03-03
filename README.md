@@ -122,4 +122,3 @@ GGGCCGCGATGTGCAGGGCC
 ## Next
 
 - Add a *"two-cuts"* mode for large variants.
-- Make PAM sequence and type of cut flexible.
