@@ -12,19 +12,26 @@ For each flank the microhomology is extended until the end of the variant as lon
 - first base is a match.
 - no 2 consecutive mismatches.
 
-The MH can be chosen from 2 flanks. MHcut uses a score to choose the "best" flank. The score is the number of matches + number of consecutive first matches.
+The MH can be chosen from 2 flanks. MHcut uses a score to choose the "best" flank. 
+The score is currently the number of matches + number of consecutive first matches.
+In the example above, *Flank 1* is chosen (score: 9 vs 8).
 
 ## PAM cut search
 
                          |||x|||        |||x|||
 	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGGTGTTGTCGTTGACGTC
-	                            <------>
+	                        <---------->
 
-PAM cuts are searched between the MH and the variant boundary. In the example above, the first valid cut is between the T and G, and the last valid cut between the C and G.
+PAM cuts are searched between the end of the first exact match stretch of the MH and the variant boundary. 
+In the example above, the first valid cut is between the G and C, and the last valid cut between the C and G.
 
 PAM cuts are enumerated in both strands. For each valid cut, the protospacer sequence is retrieved.
 
 Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0* represents the number of position with full alignment and no mismatch. If *mm0* is equal to one, i.e. a unique match in the genome, the PAM cut is kept.
+
+For each protospacer/cut, we also list other MHs that flank the cut and could be used instead of the one desired.
+Only exact MHs are considered and if at least as close as the target MH.
+The sum of the pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)) for all other MH and the maximum score/size are reported for each cut.
 
 ## Install
 
@@ -83,9 +90,12 @@ Currently the columns of the output are:
 - *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
 - *bestPamHet*: the smallest heterology, i.e. distance between a valid PAM and both MH ends. For quick filtering only. For more flexibility use the information in the "guide" file.
 
+
 ### The "guide" file
 
-Named `PREFIX-guides.tsv`, the "guide" file has one line per protospacer. It means the same variant can be present several times if several valid PAM cuts are available. Only valid protospacers are returned, i.e. between micro-homologies and unique in the genome.
+Named `PREFIX-guides.tsv`, the "guide" file has one line per protospacer. 
+This means that the same variant can be present several times if several valid PAM cuts are available. 
+Only valid protospacers are returned, i.e. between micro-homologies and unique in the genome.
 
 Currently the columns of the output are the same as for the "variant" file with the following additional columns:
 
@@ -93,8 +103,12 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *mm0* the number of position in the genome where the sequence align with no mismatches.
 - *mm1* the number of position in the genome where the sequence align with 1 mismatches.
 - *mm0* the number of position in the genome where the sequence align with 2 mismatches.
-- *m1Dist1* and *m1Dist2*: the distance between the PAM cut the the left or right stretch of perfect match, respectively.
-- *mhDist1* and *mhDist2*: the distance between the PAM cut the the left or right micro-homology, respectively.
+- *m1Dist1* and *m1Dist2*: the distance between the PAM cut the left or right stretch of perfect match, respectively.
+- *mhDist1* and *mhDist2*: the distance between the PAM cut the left or right micro-homology, respectively.
+- *MMEJscore* the sum of the pattern score of all other MHs created by this cut.
+- *maxOffMH* the size of the longest of other MHs created by this cut.
+- *maxOffSeq* the sequence of the longest of other MHs created by this cut.
+
 
 ### The "cartoon" file
 

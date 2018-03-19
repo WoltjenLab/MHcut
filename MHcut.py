@@ -3,6 +3,7 @@ from pyfaidx import Fasta
 import subprocess
 import os
 import sys
+from math import exp
 # import re
 
 dnacomp = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'W': 'W', 'S': 'S', 'M': 'K',
@@ -187,6 +188,90 @@ def alignPamsBlast(pams, reffile):
 #     # os.remove(sai_file)
 #     return pams
 
+
+# This class is used to list other (exact) MHs that might be used during the NHEJ.
+# It takes an input sequence and build an alignment array with all MH in the sequence.
+# Then for a particular "cut position" it quickly lists MH that are appropriate.
+class RegionExactMH:
+    'A region where exact micro-homology are searched.'
+    def __init__(self, seq):
+        self.seq = seq
+        self.l = len(seq)
+        # Build the alignment array (lower-triangle only using a hash).
+        self.ktab = {}
+        for ii in range(self.l):
+            self.ktab['-1_' + str(ii-1)] = -1
+        for ii in range(self.l - 1):
+            for jj in range(ii + 1, self.l):
+                if(seq[ii] == seq[jj]):
+                    if(self.ktab[str(ii-1) + '_' + str(jj-1)] != -1):
+                        self.ktab[str(ii) + '_' + str(jj)] = self.ktab[str(ii-1) + '_' + str(jj-1)]
+                    else:
+                        self.ktab[str(ii) + '_' + str(jj)] = ii
+                else:
+                    self.ktab[str(ii) + '_' + str(jj)] = -1
+
+    def listmh(self, cutpos):
+        res = {}
+        # Search for matches in the sub-array defined by the cut position
+        for ii in range(cutpos+1)[::-1]:
+            for jj in range(cutpos+1, self.l):
+                if self.ktab[str(ii) + '_' + str(jj)] != -1:
+                    start2 = self.ktab[str(ii) + '_' + str(jj)]
+                    size = ii - start2 + 1
+                    start1 = jj - size + 1
+                    # Trim if it crosses the cut
+                    if start1 <= cutpos:
+                        start_shift = cutpos - start1 + 2
+                        start1 += start_shift
+                        start2 += start_shift
+                        size = ii - start2 + 1
+                    if str(start1) + '_' + str(start2) not in res:
+                        mh = {'size': size, 'seq': self.seq[start1:(start1+size)]}
+                        mh['dist'] = start1 - start2 - size
+                        mh['startD'] = start1
+                        mh['startU'] = start2
+                        res[str(start1) + '_' + str(start2)] = mh
+        # Compute the MMEJ score from Bae et al
+        for mh in res:
+            length_weight = 20.0
+            length_factor = round(1/exp((res[mh]['size'])/(length_weight)), 3)
+            num_GC = 0
+            for ii in range(res[mh]['size']):
+                if(res[mh]['seq'][ii] == 'G' or res[mh]['seq'][ii] == 'C'):
+                    num_GC += 1
+            score = 100 * length_factor * ((res[mh]['size'] - num_GC) + (num_GC * 2))
+            res[mh]['score'] = score
+        return res
+
+    def printKtab(self):
+        toprint = '    '
+        for ii in range(self.l):
+            if(ii > 9):
+                toprint += ' ' + str(ii)
+            else:
+                toprint += '  ' + str(ii)
+        toprint += '\n'
+        toprint += '0     ' + self.seq[0] + '\n'
+        for jj in range(1, self.l):
+            if(jj > 9):
+                toprint += str(jj) + ' ' + self.seq[jj]
+            else:
+                toprint += str(jj) + '  ' + self.seq[jj]
+            for ii in range(jj):
+                elt = self.ktab[str(ii) + '_' + str(jj)]
+                if(elt == -1):
+                    elt = ' .'
+                else:
+                    if(elt > 9):
+                        elt = str(elt)
+                    else:
+                        elt = ' ' + str(elt)
+                toprint += ' ' + elt
+            toprint += '  ' + self.seq[jj] + '\n'
+        print toprint
+
+
 # Define arguments
 parser = argparse.ArgumentParser(description='Find regions with microhomology and a cut position.')
 parser.add_argument('-var', dest='varfile', required=True,
@@ -235,7 +320,7 @@ variant_input_file = open(args.varfile, 'r')
 inhead = variant_input_file.next().rstrip('\n')
 outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet'
 variant_output_file.write(outhead + '\n')
-gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\n'
+gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tMMEJscore\tmaxOffMH\tmaxOffSeq\n'
 guide_output_file.write(gouthead)
 cartoon_output_file.write(outhead + '\n\n')
 
@@ -290,8 +375,8 @@ for input_line in variant_input_file:
         pams = alignPamsBlast(pams, args.reffile)
         pams_filter = []
         for pam in pams:
-            # This where to define how unique the protospacer must be
-            # Here there must be only one position in the genome aligning perfectly
+            # This is where to define how unique the protospacer must be
+            # With mm0=1, there must be only one position in the genome aligning perfectly
             if pam['mm0'] == 1:
                 pam_het = max(pam['mhDist1'], pam['mhDist2'])
                 if(best_pam_het == 'NA'):
@@ -300,6 +385,38 @@ for input_line in variant_input_file:
                     best_pam_het = min(best_pam_het, pam_het)
                 pams_filter.append(pam)
         pams = pams_filter
+    # Search for other MH that could be used by the MMEJ
+    if len(pams) > 0 and vsize < args.maxTail*2:
+        other_mh = RegionExactMH(fl1seq + varseq + fl2seq)
+    else:
+        other_mh = False
+    for pam in pams:
+        if(not other_mh):
+            pam['mmej_total'] = 'NA'
+            pam['mmej_max'] = 'NA'
+            pam['mmej_max_size'] = 'NA'
+            pam['mmej_max_seq'] = 'NA'
+        else:
+            mhhet = other_mh.listmh(pam['cutPosition'])
+            total_score = 0
+            max_score = 0
+            max_size = 0
+            max_mho = '-'
+            for mho in mhhet:
+                data = mhhet[mho]
+                # Only consider other MH that at least as close from each other as our target MH.
+                if(data['dist'] <= pam['m1Dist1'] + pam['m1Dist2'] and
+                   (data['startU'] != flsize or data['startD'] != flsize + vsize) and
+                   (data['startU'] + data['size'] != flsize or data['startD'] + data['size'] != flsize + vsize)):
+                    total_score += data['score']
+                    max_score = max(max_score, data['score'])
+                    if data['size'] > max_size:
+                        max_size = data['size']
+                        max_mho = data['seq']
+            pam['mmej_total'] = total_score
+            pam['mmej_max'] = max_score
+            pam['mmej_max_size'] = max_size
+            pam['mmej_max_seq'] = max_mho
     # Write in output files
     # Add/remove columns here (without forgetting the header)
     voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
@@ -311,7 +428,8 @@ for input_line in variant_input_file:
         guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
         guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']))
         guide_output_file.write('\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
-        guide_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']) + '\n')
+        guide_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']))
+        guide_output_file.write('\t' + str(pam['mmej_total']) + '\t' + str(pam['mmej_max_size']) + '\t' + str(pam['mmej_max_seq']) + '\n')
     # Write the cartoon
     cartoon_output_file.write(voutline + '\n')
     cartoon_output_lines = ['', '', '']
@@ -373,10 +491,11 @@ for input_line in variant_input_file:
         cartoon_output_file.write(line + '\n')
     # Cartoon: protospacers sequence
     if(len(pams) > 0):
-        cartoon_output_file.write('Protospacers, m1Dist1, m1Dist2, mhDist1, mhDist2:\n')
+        cartoon_output_file.write('Protospacers, m1Dist1, m1Dist2, mhDist1, mhDist2, largestOtherMH:\n')
         for pam in pams:
             cartoon_output_file.write(pam['proto'] + '\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
-            cartoon_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']) + '\n')
+            cartoon_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']))
+            cartoon_output_file.write('\t' + str(pam['mmej_max_seq']) + '\n')
     cartoon_output_file.write('\n\n')
 
 print '\nDone.\n'
