@@ -226,7 +226,7 @@ class RegionExactMH:
                         start1 += start_shift
                         start2 += start_shift
                         size = ii - start2 + 1
-                    if str(start1) + '_' + str(start2) not in res:
+                    if str(start1) + '_' + str(start2) not in res and size > 1:
                         mh = {'size': size, 'seq': self.seq[start1:(start1+size)]}
                         mh['dist'] = start1 - start2 - size
                         mh['startD'] = start1
