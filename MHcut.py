@@ -441,7 +441,7 @@ for input_line in variant_input_file:
         guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']))
         guide_output_file.write('\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
         guide_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']))
-        guide_output_file.write('\t' + str(pam['ot_nb']) + '\t' + str(pam['ot_maxL']) + '\t')
+        guide_output_file.write('\t' + str(pam['ot_nb']) + '\t' + str(pam['ot_maxL']))
         guide_output_file.write('\t' + str(pam['bot_score']) + '\t' + str(pam['bot_size']))
         guide_output_file.write('\t' + str(pam['bot_vsize']) + '\t' + str(pam['bot_gc']))
         guide_output_file.write('\t' + pam['bot_seq'] + '\n')
