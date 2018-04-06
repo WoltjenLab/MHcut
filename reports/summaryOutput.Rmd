@@ -1,0 +1,66 @@
+---
+title: "Summary of MHcut output"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, tidy=TRUE)
+```
+
+# Summary of MHcut output
+
+This report shows some simple analysis to quickly check the output of MHcut.
+The goal is to get an idea of the distribution of each metric in the output and check if something is off.
+
+```{r load}
+## For data manipulation
+library(dplyr)
+library(magrittr)
+
+## For graphs and tables
+library(ggplot2)
+library(knitr)
+library(RColorBrewer)
+palset = c(brewer.pal(9, 'Set1'), brewer.pal(8, 'Set2'))
+
+## Functions
+winsor <- function(x, u=10){
+  if(any(x>u)) x[x>u] = u
+  x
+}
+
+## Import MHcut output
+prefix = '../clinvar-grch38-all-deletion-1bp'
+var.df = read.table(paste0(prefix,'-variants.tsv'), as.is=TRUE, header=TRUE, sep='\t')
+gui.df = read.table(paste0(prefix,'-guides.tsv'), as.is=TRUE, header=TRUE, sep='\t')
+var.df %<>% mutate(size.class=cut(varL, c(0,3,5,10,30,Inf), labels=c('1-3','4-5','6-10','11-30','>30')), pam.status=ifelse(guidesNoOT>0, 'no off-target',  'off-targets'), pam.status=ifelse(pamMot==0, 'no PAM', pam.status))
+```
+
+## At the variant level
+
+```{r var}
+ggplot(var.df, aes(x=winsor(varL, u=20))) + geom_histogram(binwidth=1) + theme_bw()
+ggplot(var.df, aes(x=winsor(mhL, u=20))) + geom_histogram(binwidth=1) + theme_bw()
+ggplot(var.df, aes(x=winsor(mh1L, u=20))) + geom_histogram(binwidth=1) + theme_bw()
+ggplot(var.df, aes(x=hom)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free')
+ggplot(var.df, aes(x=winsor(mhL, 100),y=hom, fill=log10(..count..))) + geom_bin2d() + theme_bw()
+```
+
+### PAM status
+
+```{r pam}
+ggplot(var.df, aes(x=pamMot, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free')
+var.df %>% filter(pamMot>0) %>% ggplot(aes(x=guidesNoOT, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free') + ggtitle('PAM available')
+var.df %>% filter(pamMot>0, guidesNoOT==0) %>% head %>% select(Chromosome, Start, Stop, pamMot, guidesNoOT, guideMinOT) %>% kable
+## %>% ggplot(aes(x=guideMinOT, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free') + ggtitle('PAM available')
+```
+
+**Something wrong** with the `guideMinOT`: when `pamMot>0` and `guidesNoOT==0` some variants have `-` in their `guideMinOT` column.
+I think it's because there are valid PAMs but no unique ones, so they are not tested for off-targets. 
+I should really clarify the output and use `NA` as default values in columns to avoid confusion.
+
+
+## At the guide level
+

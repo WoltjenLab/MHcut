@@ -394,8 +394,8 @@ for input_line in variant_input_file:
         other_mh = RegionExactMH(fl1seq + varseq + fl2seq)
     else:
         other_mh = False
-    no_offtargets = 0 # Number of guides with no off target MH
-    min_offtargets = '-'
+    no_offtargets = 0  # Number of guides with no off target MH
+    min_offtargets = 'NA'
     for pam in pams:
         # Number of off target and maximum size (no matter the score)
         pam['ot_nb'] = 0
@@ -405,7 +405,7 @@ for input_line in variant_input_file:
         pam['bot_size'] = 0
         pam['bot_vsize'] = -1
         pam['bot_gc'] = -1
-        pam['bot_seq'] = '-'
+        pam['bot_seq'] = 'NA'
         if other_mh:
             mhhet = other_mh.listmh(pam['cutPosition'], args.minMHLot)
             for mho in mhhet:
@@ -424,7 +424,7 @@ for input_line in variant_input_file:
                         pam['bot_seq'] = data['seq']
         if pam['ot_nb'] == 0:
             no_offtargets += 1
-        if min_offtargets == '-':
+        if min_offtargets == 'NA':
             min_offtargets = pam['ot_nb']
         else:
             min_offtargets = min(min_offtargets, pam['ot_nb'])

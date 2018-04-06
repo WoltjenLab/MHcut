@@ -141,3 +141,5 @@ GGGCCGCGATGTGCAGGGCC
 ## Next
 
 - Add a *"two-cuts"* mode for large variants.
+- Clarify output. E.g. `NA` when something is not tested.
+- Add column with nb of unique PAMs.
