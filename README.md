@@ -71,6 +71,7 @@ Other optional parameters:
 - *-minm1L* the minimum length of the first stretch if the microhomology. Default is `2`.
 - *-PAM* the PAM sequence. Default is `NGG`.
 - *-PAMcut* the cut position relative to the PAM motif. Default is `-3`
+- *-minMHLot* the minimum length of off-target MH to be considered in the off-target check. Default is `3`.
 
 ## Output
 
@@ -89,7 +90,8 @@ Currently the columns of the output are:
 - *MHseq1*/*MHseq2*: sequences of the MH.
 - *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
 - *bestPamHet*: the smallest heterology, i.e. distance between a valid PAM and both MH ends. For quick filtering only. For more flexibility use the information in the "guide" file.
-
+- *guidesNoOT*: the number of guides that have no off-target MH.
+- *guidesMinOT*: the number of off-target MH for the guide which have the least amount of off-target MH.
 
 ### The "guide" file
 
@@ -105,10 +107,13 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *mm0* the number of position in the genome where the sequence align with 2 mismatches.
 - *m1Dist1* and *m1Dist2*: the distance between the PAM cut the left or right stretch of perfect match, respectively.
 - *mhDist1* and *mhDist2*: the distance between the PAM cut the left or right micro-homology, respectively.
-- *MMEJscore* the sum of the pattern score of all other MHs created by this cut.
-- *maxOffMH* the size of the longest of other MHs created by this cut.
-- *maxOffSeq* the sequence of the longest of other MHs created by this cut.
-
+- *nbOffTgt* the number of off-target MH.
+- *largestOffTgt* the size of the largest off-target MH.
+- *botScore* the MMEJ score of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
+- *botSize* the MH length of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
+- *botVarL* the length of the variant created by the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
+- *botGC* the GC content of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
+- *botSeq* the sequence of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
 
 ### The "cartoon" file
 

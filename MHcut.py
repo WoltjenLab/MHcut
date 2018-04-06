@@ -211,7 +211,7 @@ class RegionExactMH:
                 else:
                     self.ktab[str(ii) + '_' + str(jj)] = -1
 
-    def listmh(self, cutpos):
+    def listmh(self, cutpos, minmh_size=3):
         res = {}
         # Search for matches in the sub-array defined by the cut position
         for ii in range(cutpos+1)[::-1]:
@@ -226,9 +226,10 @@ class RegionExactMH:
                         start1 += start_shift
                         start2 += start_shift
                         size = ii - start2 + 1
-                    if str(start1) + '_' + str(start2) not in res and size > 1:
+                    if str(start1) + '_' + str(start2) not in res and size >= minmh_size:
                         mh = {'size': size, 'seq': self.seq[start1:(start1+size)]}
                         mh['dist'] = start1 - start2 - size
+                        mh['vsize'] = start1 - start2
                         mh['startD'] = start1
                         mh['startU'] = start2
                         res[str(start1) + '_' + str(start2)] = mh
@@ -242,6 +243,7 @@ class RegionExactMH:
                     num_GC += 1
             score = 100 * length_factor * ((res[mh]['size'] - num_GC) + (num_GC * 2))
             res[mh]['score'] = score
+            res[mh]['gc'] = float(num_GC) / res[mh]['size']
         return res
 
     def printKtab(self):
@@ -292,6 +294,8 @@ parser.add_argument('-minm1L', dest='minm1L', default=3, type=int,
 parser.add_argument('-PAM', dest='pamseq', default='NGG', help='the PAM motif')
 parser.add_argument('-PAMcut', dest='pamcut', default=-3, type=int,
                     help='the cut position relative to the PAM motif')
+parser.add_argument('-minMHLot', dest='minMHLot', default=3, type=int,
+                    help='the minimum length of off-target microhomology')
 args = parser.parse_args()
 
 
@@ -318,9 +322,9 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet'
+outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet\tguidesNoOT\tguideMinOT'
 variant_output_file.write(outhead + '\n')
-gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tMMEJscore\tmaxOffMH\tmaxOffSeq\n'
+gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
 guide_output_file.write(gouthead)
 cartoon_output_file.write(outhead + '\n\n')
 
@@ -390,46 +394,57 @@ for input_line in variant_input_file:
         other_mh = RegionExactMH(fl1seq + varseq + fl2seq)
     else:
         other_mh = False
+    no_offtargets = 0 # Number of guides with no off target MH
+    min_offtargets = '-'
     for pam in pams:
-        if(not other_mh):
-            pam['mmej_total'] = 'NA'
-            pam['mmej_max'] = 'NA'
-            pam['mmej_max_size'] = 'NA'
-            pam['mmej_max_seq'] = 'NA'
-        else:
-            mhhet = other_mh.listmh(pam['cutPosition'])
-            total_score = 0
-            max_score = 0
-            max_size = 0
-            max_mho = '-'
+        # Number of off target and maximum size (no matter the score)
+        pam['ot_nb'] = 0
+        pam['ot_maxL'] = 0
+        # Best Off Target (bot) stats
+        pam['bot_score'] = 0
+        pam['bot_size'] = 0
+        pam['bot_vsize'] = -1
+        pam['bot_gc'] = -1
+        pam['bot_seq'] = '-'
+        if other_mh:
+            mhhet = other_mh.listmh(pam['cutPosition'], args.minMHLot)
             for mho in mhhet:
                 data = mhhet[mho]
                 # Only consider other MH that at least as close from each other as our target MH.
-                if(data['dist'] <= pam['m1Dist1'] + pam['m1Dist2'] and
+                if(data['vsize'] <= vsize and
                    (data['startU'] != flsize or data['startD'] != flsize + vsize) and
                    (data['startU'] + data['size'] != flsize or data['startD'] + data['size'] != flsize + vsize)):
-                    total_score += data['score']
-                    max_score = max(max_score, data['score'])
-                    if data['size'] > max_size:
-                        max_size = data['size']
-                        max_mho = data['seq']
-            pam['mmej_total'] = total_score
-            pam['mmej_max'] = max_score
-            pam['mmej_max_size'] = max_size
-            pam['mmej_max_seq'] = max_mho
+                    pam['ot_nb'] += 1
+                    pam['ot_maxL'] = max(pam['ot_maxL'], data['size'])
+                    if data['score'] > pam['bot_score']:
+                        pam['bot_score'] = data['score']
+                        pam['bot_size'] = data['size']
+                        pam['bot_vsize'] = data['vsize']
+                        pam['bot_gc'] = round(data['gc'], 3)
+                        pam['bot_seq'] = data['seq']
+        if pam['ot_nb'] == 0:
+            no_offtargets += 1
+        if min_offtargets == '-':
+            min_offtargets = pam['ot_nb']
+        else:
+            min_offtargets = min(min_offtargets, pam['ot_nb'])
     # Write in output files
     # Add/remove columns here (without forgetting the header)
     voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
     voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
     voutline += '\t' + str(nb_pam_motives) + '\t' + str(best_pam_het)
+    voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets)
     variant_output_file.write(voutline + '\n')
     for pam in pams:
         guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
         guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']))
         guide_output_file.write('\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
         guide_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']))
-        guide_output_file.write('\t' + str(pam['mmej_total']) + '\t' + str(pam['mmej_max_size']) + '\t' + str(pam['mmej_max_seq']) + '\n')
+        guide_output_file.write('\t' + str(pam['ot_nb']) + '\t' + str(pam['ot_maxL']) + '\t')
+        guide_output_file.write('\t' + str(pam['bot_score']) + '\t' + str(pam['bot_size']))
+        guide_output_file.write('\t' + str(pam['bot_vsize']) + '\t' + str(pam['bot_gc']))
+        guide_output_file.write('\t' + pam['bot_seq'] + '\n')
     # Write the cartoon
     cartoon_output_file.write(voutline + '\n')
     cartoon_output_lines = ['', '', '']
@@ -491,11 +506,11 @@ for input_line in variant_input_file:
         cartoon_output_file.write(line + '\n')
     # Cartoon: protospacers sequence
     if(len(pams) > 0):
-        cartoon_output_file.write('Protospacers, m1Dist1, m1Dist2, mhDist1, mhDist2, largestOtherMH:\n')
+        cartoon_output_file.write('Protospacers, m1Dist1, m1Dist2, mhDist1, mhDist2, bestOffTarget:\n')
         for pam in pams:
             cartoon_output_file.write(pam['proto'] + '\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
             cartoon_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']))
-            cartoon_output_file.write('\t' + str(pam['mmej_max_seq']) + '\n')
+            cartoon_output_file.write('\t' + str(pam['bot_seq']) + '\n')
     cartoon_output_file.write('\n\n')
 
 print '\nDone.\n'
