@@ -35,7 +35,7 @@ winsor <- function(x, u=10){
 prefix = '../clinvar-grch38-all-deletion-1bp'
 var.df = read.table(paste0(prefix,'-variants.tsv'), as.is=TRUE, header=TRUE, sep='\t')
 gui.df = read.table(paste0(prefix,'-guides.tsv'), as.is=TRUE, header=TRUE, sep='\t')
-var.df %<>% mutate(size.class=cut(varL, c(0,3,5,10,30,Inf), labels=c('1-3','4-5','6-10','11-30','>30')), pam.status=ifelse(guidesNoOT>0, 'no off-target',  'off-targets'), pam.status=ifelse(pamMot==0, 'no PAM', pam.status))
+var.df %<>% mutate(size.class=cut(varL, c(0,3,5,10,30,Inf), labels=c('1-3','4-5','6-10','11-30','>30')), pam.status=ifelse(guidesNoOT>0, 'no off-target',  'off-targets'), pam.status=ifelse(pamUniq==0, 'no unique PAM', pam.status), pam.status=ifelse(pamMot==0, 'no PAM', pam.status))
 ```
 
 ## At the variant level
@@ -45,22 +45,30 @@ ggplot(var.df, aes(x=winsor(varL, u=20))) + geom_histogram(binwidth=1) + theme_b
 ggplot(var.df, aes(x=winsor(mhL, u=20))) + geom_histogram(binwidth=1) + theme_bw()
 ggplot(var.df, aes(x=winsor(mh1L, u=20))) + geom_histogram(binwidth=1) + theme_bw()
 ggplot(var.df, aes(x=hom)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free')
-ggplot(var.df, aes(x=winsor(mhL, 100),y=hom, fill=log10(..count..))) + geom_bin2d() + theme_bw()
+var.df %>% group_by(mhL, hom) %>% summarize(n=n()) %>% ggplot(aes(x=mhL, y=hom, size=log10(n))) + geom_point() + theme_bw()
 ```
 
 ### PAM status
 
-```{r pam}
-ggplot(var.df, aes(x=pamMot, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free')
-var.df %>% filter(pamMot>0) %>% ggplot(aes(x=guidesNoOT, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free') + ggtitle('PAM available')
-var.df %>% filter(pamMot>0, guidesNoOT==0) %>% head %>% select(Chromosome, Start, Stop, pamMot, guidesNoOT, guideMinOT) %>% kable
-## %>% ggplot(aes(x=guideMinOT, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free') + ggtitle('PAM available')
-```
+*The `NA`s represents variants that were not tested for off-target because too large.*
 
-**Something wrong** with the `guideMinOT`: when `pamMot>0` and `guidesNoOT==0` some variants have `-` in their `guideMinOT` column.
-I think it's because there are valid PAMs but no unique ones, so they are not tested for off-targets. 
-I should really clarify the output and use `NA` as default values in columns to avoid confusion.
+```{r pam}
+ggplot(var.df, aes(x=pamMot, fill=pam.status)) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(size.class~., scales='free')
+ggplot(var.df, aes(x=pamUniq, fill=pam.status)) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(size.class~., scales='free')
+var.df %>% filter(pamUniq>0) %>% ggplot(aes(x=guidesNoOT, fill=pam.status)) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(size.class~., scales='free') + ggtitle('PAM available')
+var.df %>% filter(pamUniq>0, guidesNoOT==0) %>% ggplot(aes(x=guidesMinOT, fill=pam.status)) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(size.class~., scales='free') + ggtitle('PAM available, off-target MH')
+```
 
 
 ## At the guide level
 
+```{r guidespam}
+gui.df %<>% mutate(size.class=cut(varL, c(0,3,5,10,30,Inf), labels=c('1-3','4-5','6-10','11-30','>30')), pam.status=ifelse(guidesNoOT>0, 'no off-target',  'off-targets'), pam.status=ifelse(pamUniq==0, 'no unique PAM', pam.status), pam.status=ifelse(pamMot==0, 'no PAM', pam.status))
+ggplot(gui.df, aes(x=pamMot, fill=pam.status)) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(size.class~., scales='free')
+ggplot(gui.df, aes(x=botScore, fill=pam.status)) + geom_histogram() + theme_bw() + facet_grid(size.class~., scales='free')
+ggplot(gui.df, aes(x=botSize, fill=pam.status)) + geom_histogram(binwidth=1) + theme_bw() + facet_grid(size.class~., scales='free')
+gui.df %>% filter(varL<100) %>% group_by(varL, botVarL) %>% summarize(n=n()) %>% ggplot(aes(x=varL, y=botVarL, size=n)) + geom_point() + theme_bw() + geom_abline(linetype=2)
+gui.df %>% group_by(largestOffTgt, botSize) %>% summarize(n=n()) %>% ggplot(aes(x=largestOffTgt, y=botSize, size=n)) + theme_bw() + geom_abline(linetype=2) + geom_point()
+```
+
+After a quick look, it seems fine.

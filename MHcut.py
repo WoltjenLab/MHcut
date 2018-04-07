@@ -322,7 +322,7 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet\tguidesNoOT\tguideMinOT'
+outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet\tpamUniq\tguidesNoOT\tguidesMinOT'
 variant_output_file.write(outhead + '\n')
 gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
 guide_output_file.write(gouthead)
@@ -394,19 +394,22 @@ for input_line in variant_input_file:
         other_mh = RegionExactMH(fl1seq + varseq + fl2seq)
     else:
         other_mh = False
-    no_offtargets = 0  # Number of guides with no off target MH
+    no_offtargets = 'NA'  # Number of guides with no off target MH
     min_offtargets = 'NA'
     for pam in pams:
         # Number of off target and maximum size (no matter the score)
-        pam['ot_nb'] = 0
-        pam['ot_maxL'] = 0
+        pam['ot_nb'] = 'NA'
+        pam['ot_maxL'] = 'NA'
         # Best Off Target (bot) stats
-        pam['bot_score'] = 0
-        pam['bot_size'] = 0
-        pam['bot_vsize'] = -1
-        pam['bot_gc'] = -1
+        pam['bot_score'] = 'NA'
+        pam['bot_size'] = 'NA'
+        pam['bot_vsize'] = 'NA'
+        pam['bot_gc'] = 'NA'
         pam['bot_seq'] = 'NA'
         if other_mh:
+            pam['ot_nb'] = 0
+            pam['ot_maxL'] = 0
+            pam['bot_score'] = 0
             mhhet = other_mh.listmh(pam['cutPosition'], args.minMHLot)
             for mho in mhhet:
                 data = mhhet[mho]
@@ -422,18 +425,20 @@ for input_line in variant_input_file:
                         pam['bot_vsize'] = data['vsize']
                         pam['bot_gc'] = round(data['gc'], 3)
                         pam['bot_seq'] = data['seq']
-        if pam['ot_nb'] == 0:
-            no_offtargets += 1
-        if min_offtargets == 'NA':
-            min_offtargets = pam['ot_nb']
-        else:
-            min_offtargets = min(min_offtargets, pam['ot_nb'])
+            if no_offtargets == 'NA':
+                no_offtargets = 0
+            if pam['ot_nb'] == 0:
+                no_offtargets += 1
+            if min_offtargets == 'NA':
+                min_offtargets = pam['ot_nb']
+            else:
+                min_offtargets = min(min_offtargets, pam['ot_nb'])
     # Write in output files
     # Add/remove columns here (without forgetting the header)
     voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
     voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
-    voutline += '\t' + str(nb_pam_motives) + '\t' + str(best_pam_het)
+    voutline += '\t' + str(nb_pam_motives) + '\t' + str(best_pam_het) + '\t' + str(len(pams))
     voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets)
     variant_output_file.write(voutline + '\n')
     for pam in pams:

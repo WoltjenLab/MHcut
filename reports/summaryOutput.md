@@ -10,18 +10,13 @@ At the variant level
 
 ### PAM status
 
-![](summaryOutput_files/figure-markdown_github/pam-1.png)![](summaryOutput_files/figure-markdown_github/pam-2.png)
+*The `NA`s represents variants that were not tested for off-target because too large.*
 
-| Chromosome |      Start|       Stop|  pamMot|  guidesNoOT| guideMinOT |
-|:-----------|----------:|----------:|-------:|-----------:|:-----------|
-| chr1       |  102913660|  102913671|       2|           0| -          |
-| chr1       |    1049937|    1049951|       1|           0| 2          |
-| chr1       |  111982045|  111982047|       1|           0| -          |
-| chr1       |  114688745|  114688748|       1|           0| -          |
-| chr1       |  115695149|  115695152|       1|           0| -          |
-| chr1       |  116387403|  116387417|       1|           0| 1          |
-
-**Something wrong** with the `guideMinOT`: when `pamMot>0` and `guidesNoOT==0` some variants have `-` in their `guideMinOT` column. I think it's because there are valid PAMs but no unique ones, so they are not tested for off-targets. I should really clarify the output and use `NA` as default values in columns to avoid confusion.
+![](summaryOutput_files/figure-markdown_github/pam-1.png)![](summaryOutput_files/figure-markdown_github/pam-2.png)![](summaryOutput_files/figure-markdown_github/pam-3.png)![](summaryOutput_files/figure-markdown_github/pam-4.png)
 
 At the guide level
 ------------------
+
+![](summaryOutput_files/figure-markdown_github/guidespam-1.png)![](summaryOutput_files/figure-markdown_github/guidespam-2.png)![](summaryOutput_files/figure-markdown_github/guidespam-3.png)![](summaryOutput_files/figure-markdown_github/guidespam-4.png)![](summaryOutput_files/figure-markdown_github/guidespam-5.png)
+
+After a quick look, it seems fine.
