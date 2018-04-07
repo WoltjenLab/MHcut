@@ -29,9 +29,9 @@ PAM cuts are enumerated in both strands. For each valid cut, the protospacer seq
 
 Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0* represents the number of position with full alignment and no mismatch. If *mm0* is equal to one, i.e. a unique match in the genome, the PAM cut is kept.
 
-For each protospacer/cut, we also list other MHs that flank the cut and could be used instead of the one desired.
-Only exact MHs are considered and if at least as close as the target MH.
-The sum of the pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)) for all other MH and the maximum score/size are reported for each cut.
+For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
+Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
+Among other, the output contains information about the best off-target MH (shortened to *bot*) defined as the off-target MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
 
 ## Install
 
