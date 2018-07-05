@@ -105,7 +105,7 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *protospacer* the sequence of the protospacer.
 - *mm0* the number of position in the genome where the sequence align with no mismatches.
 - *mm1* the number of position in the genome where the sequence align with 1 mismatches.
-- *mm0* the number of position in the genome where the sequence align with 2 mismatches.
+- *mm2* the number of position in the genome where the sequence align with 2 mismatches.
 - *m1Dist1* and *m1Dist2*: the distance between the PAM cut the left or right stretch of perfect match, respectively.
 - *mhDist1* and *mhDist2*: the distance between the PAM cut the left or right micro-homology, respectively.
 - *nbOffTgt* the number of off-target MH.
