@@ -124,7 +124,7 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamseq_rev, pamcut):
 
 def alignPamsBlast(pams, reffile):
     '''Align protospacers and return an updated version of the input "pams" list.'''
-    fasta_file = 'tempMHcut.fasta'
+    fasta_file = 'tempMHcut-' + args.outprefix + '.fasta'
     ff = open(fasta_file, 'w')
     pams_hash = {}
     for pam in pams:
