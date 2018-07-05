@@ -359,7 +359,13 @@ for input_line in variant_input_file:
     fl2seq = str(reffa[input_line[0]][vend:(vend+flsize)])
     # Test MH in each flank (reverse for flank 1) and save best MH
     mhfl1 = mhTest(varseq[::-1], fl1seq[::-1])
+    # If no MH or too small, or too low MH ratio or too short first microhomology stretch
+    if(mhfl1['mhL'] < args.minMHL or mhfl1['hom'] < args.minhom or mhfl1['m1L'] < args.minm1L):
+        mhfl1['score'] = 0
     mhfl2 = mhTest(varseq, fl2seq)
+    # If no MH or too small, or too low MH ratio or too short first microhomology stretch
+    if(mhfl2['mhL'] < args.minMHL or mhfl2['hom'] < args.minhom or mhfl2['m1L'] < args.minm1L):
+        mhfl2['score'] = 0
     if(mhfl1['score'] > mhfl2['score']):  # Using the alignment score, the best flank is chosen
         mhfl = mhfl1
         mhfl['flank'] = 1  # This is to remember which flank is chosen
@@ -367,8 +373,8 @@ for input_line in variant_input_file:
     else:
         mhfl = mhfl2
         mhfl['flank'] = 2
-    # If no MH or too small, or too low MH ratio or too short first microhomology stretch, jump to the next input line
-    if(mhfl['score'] == 0 or mhfl['mhL'] < args.minMHL or mhfl['hom'] < args.minhom or mhfl['m1L'] < args.minm1L):
+    # If a score of 0, either no MH or didn't satisfy criteria above, jump to the next input line
+    if(mhfl['score'] == 0):
         continue
     # Find PAM motives
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, pamseq_rev, args.pamcut)
