@@ -154,6 +154,26 @@ def alignPamsBlast(pams, reffile):
     return pams
 
 
+def alignPamsJellyfish(pams, jffile):
+    '''Align protospacers and return an updated version of the input "pams" list.'''
+    jellyfish_cmd = ['jellyfish', 'query', jffile]
+    for pam in pams:
+        jellyfish_cmd.append(pam['proto'])
+    dump = open('/dev/null')
+    jellyfish_out = subprocess.check_output(jellyfish_cmd, stderr=dump)
+    dump.close()
+    jellyfish_out = jellyfish_out.rstrip('\n').split('\n')
+    protos_count = {}
+    for line in jellyfish_out:
+        line = line.split(' ')
+        protos_count[line[0]] = int(line[1])
+    for pam in pams:
+        pam['mm0'] = protos_count[pam['proto']]
+        pam['mm1'] = 'NA'
+        pam['mm2'] = 'NA'
+    return pams
+
+
 # def alignPamsBWA(pams, reffile):
 #     '''Align protospacers and return an updated 'pams' object.'''
 #     fastq_file = 'tempMHcut.fastq'
@@ -279,6 +299,7 @@ parser = argparse.ArgumentParser(description='Find regions with microhomology an
 parser.add_argument('-var', dest='varfile', required=True,
                     help='the file with the variants location (BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True, help='the reference genome fasta file')
+parser.add_argument('-jf', dest='jffile', default='', help='the jellyfish file of the reference genome')
 parser.add_argument('-minvarL', dest='minvarL', default=3, type=int,
                     help='the minimum variant length')
 parser.add_argument('-minMHL', dest='minMHL', default=3, type=int,
@@ -382,7 +403,10 @@ for input_line in variant_input_file:
     nb_pam_motives = len(pams)
     best_pam_het = 'NA'
     if(nb_pam_motives > 0):
-        pams = alignPamsBlast(pams, args.reffile)
+        if(args.jffile == ''):
+            pams = alignPamsBlast(pams, args.reffile)
+        else:
+            pams = alignPamsJellyfish(pams, args.jffile)
         pams_filter = []
         for pam in pams:
             # This is where to define how unique the protospacer must be
