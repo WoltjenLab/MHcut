@@ -42,7 +42,13 @@ for record in vcf_reader:
         outline.append(str(record.POS + 1))
         outline.append(str(record.POS + len(record.REF) - 1))
         for info in infos:
-            rec = record.INFO[info[0]]
-            outline.append(rec[info[1]])
+            if(info[0] not in record.INFO):
+                outline.append('-')
+            else:
+                rec = record.INFO[info[0]]
+                if(type(rec) is bool):
+                   outline.append('T')
+                else:
+                   outline.append(rec[info[1]])
         outf.write('\t'.join(outline) + '\n')
 outf.close()
