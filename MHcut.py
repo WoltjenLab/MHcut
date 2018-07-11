@@ -91,10 +91,11 @@ def revComp(seq):
 def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamseq_rev, pamcut):
     '''Look for PAM cuts between the MH regions.'''
     seq = fl1seq + varseq + fl2seq
-    search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['m1L']]
+    min_mh_cut = min(mhfl['m1L'], 3)  # Minimum (exact) MH length that must remains after a cut.
+    search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - min_mh_cut]
     reduced_search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - mhfl['mhL']]
     if(mhfl['flank'] == 2):
-        search_range = [len(fl1seq) + mhfl['m1L'] - 1, len(fl1seq) + len(varseq)]
+        search_range = [len(fl1seq) + min_mh_cut - 1, len(fl1seq) + len(varseq)]
         reduced_search_range = [len(fl1seq) + mhfl['mhL'] - 1, len(fl1seq) + len(varseq)]
     # Test each position: if it matched the motif and in the search range, add to list
     pams = []
