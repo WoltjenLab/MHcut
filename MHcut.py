@@ -344,7 +344,7 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tbestPamHet\tpamUniq\tguidesNoOT\tguidesMinOT'
+outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tpamUniq\tguidesNoOT\tguidesMinOT'
 variant_output_file.write(outhead + '\n')
 gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
 guide_output_file.write(gouthead)
@@ -402,7 +402,6 @@ for input_line in variant_input_file:
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, pamseq_rev, args.pamcut)
     # Map protospacers to the genome and keep unique ones
     nb_pam_motives = len(pams)
-    best_pam_het = 'NA'
     if(nb_pam_motives > 0):
         if(args.jffile == ''):
             pams = alignPamsBlast(pams, args.reffile)
@@ -413,11 +412,6 @@ for input_line in variant_input_file:
             # This is where to define how unique the protospacer must be
             # With mm0=1, there must be only one position in the genome aligning perfectly
             if pam['mm0'] == 1:
-                pam_het = max(pam['mhDist1'], pam['mhDist2'])
-                if(best_pam_het == 'NA'):
-                    best_pam_het = pam_het
-                else:
-                    best_pam_het = min(best_pam_het, pam_het)
                 pams_filter.append(pam)
         pams = pams_filter
     # Search for other MH that could be used by the MMEJ
@@ -469,7 +463,7 @@ for input_line in variant_input_file:
     voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
     voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
-    voutline += '\t' + str(nb_pam_motives) + '\t' + str(best_pam_het) + '\t' + str(len(pams))
+    voutline += '\t' + str(nb_pam_motives) + '\t' + str(len(pams))
     voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets)
     variant_output_file.write(voutline + '\n')
     for pam in pams:

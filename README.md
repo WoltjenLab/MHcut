@@ -89,7 +89,6 @@ Currently the columns of the output are:
 - *mhDist*: distance between the end of MH and the variant boundary.
 - *MHseq1*/*MHseq2*: sequences of the MH.
 - *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
-- *bestPamHet*: the smallest heterology, i.e. distance between a valid PAM and both MH ends. For quick filtering only. For more flexibility use the information in the "guide" file.
 - *pamUniq*: the number of PAM motives in a valid location and with unique the protospacer.
 - *guidesNoOT*: the number of guides that have no off-target MH.
 - *guidesMinOT*: the number of off-target MH for the guide which have the least amount of off-target MH.
