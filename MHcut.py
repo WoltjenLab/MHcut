@@ -109,10 +109,16 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamseq_rev, pamcut):
             strand = '-'
         if(strand and cut_pos >= search_range[0] and cut_pos < search_range[1]
            and (cut_pos < search_range[0] + maxTail or cut_pos >= search_range[1] - maxTail)):
+            # 23 bp guides including the PAM
             if(strand == '+'):
-                proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1)]
+                proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1 + len(pamseq))]
             else:
-                proto_seq = seq[(cut_pos + pamcut + 1):(cut_pos + 20 + pamcut + 1)]
+                proto_seq = seq[(cut_pos + pamcut + 1 - len(pamseq)):(cut_pos + 20 + pamcut + 1)]
+            # # 20 bp guides not including the PAM
+            # if(strand == '+'):
+            #     proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1)]
+            # else:
+            #     proto_seq = seq[(cut_pos + pamcut + 1):(cut_pos + 20 + pamcut + 1)]
             pam_info = {'cutPosition': cut_pos, 'strand': strand, 'proto': proto_seq}
             # Distance to MH on each side using first stretch of perfect match or the extended MH
             pam_info['m1Dist1'] = cut_pos - search_range[0]
