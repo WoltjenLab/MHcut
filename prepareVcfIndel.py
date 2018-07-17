@@ -24,7 +24,10 @@ args = parser.parse_args()
 infos = []
 for info in args.infos.split(','):
     info = info.split('|')
-    infos.append([info[0], int(info[1])])
+    if(info[1] == '-'):
+        infos.append([info[0], -1])
+    else:
+        infos.append([info[0], int(info[1])])
 
 outf = open(args.outfile, 'w')
 vcf_reader = vcf.Reader(open(args.vcffile, 'r'))
@@ -47,8 +50,17 @@ for record in vcf_reader:
             else:
                 rec = record.INFO[info[0]]
                 if(type(rec) is bool):
-                   outline.append('T')
+                    rec = 'T'
                 else:
-                   outline.append(rec[info[1]])
+                    if(type(rec) == list):
+                        if(info[1] >= 0):
+                            rec = rec[info[1]]
+                        else:
+                            rec = ';'.join(rec)
+                if(rec is None):
+                    outline.append('-')
+                else:
+                    outline.append(str(rec))
+                        
         outf.write('\t'.join(outline) + '\n')
 outf.close()
