@@ -324,7 +324,12 @@ parser.add_argument('-PAMcut', dest='pamcut', default=-3, type=int,
                     help='the cut position relative to the PAM motif')
 parser.add_argument('-minMHLot', dest='minMHLot', default=3, type=int,
                     help='the minimum length of off-target microhomology')
+parser.add_argument('-nofilt', dest='nofilter', action='store_true',
+                    help="Don't filter variants without MH.")
 args = parser.parse_args()
+
+if(args.nofilt):
+    print 'no filter mode (-nofilt): all variants will be kept and the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L'
 
 
 # Open connection to reference genome
@@ -388,11 +393,13 @@ for input_line in variant_input_file:
     # Test MH in each flank (reverse for flank 1) and save best MH
     mhfl1 = mhTest(varseq[::-1], fl1seq[::-1])
     # If no MH or too small, or too low MH ratio or too short first microhomology stretch
-    if(mhfl1['mhL'] < args.minMHL or mhfl1['hom'] < args.minhom or mhfl1['m1L'] < args.minm1L):
+    if(not args.nofilter and
+       (mhfl1['mhL'] < args.minMHL or mhfl1['hom'] < args.minhom or mhfl1['m1L'] < args.minm1L)):
         mhfl1['score'] = 0
     mhfl2 = mhTest(varseq, fl2seq)
     # If no MH or too small, or too low MH ratio or too short first microhomology stretch
-    if(mhfl2['mhL'] < args.minMHL or mhfl2['hom'] < args.minhom or mhfl2['m1L'] < args.minm1L):
+    if(not args.nofilter and
+       (mhfl2['mhL'] < args.minMHL or mhfl2['hom'] < args.minhom or mhfl2['m1L'] < args.minm1L)):
         mhfl2['score'] = 0
     if(mhfl1['score'] > mhfl2['score']):  # Using the alignment score, the best flank is chosen
         mhfl = mhfl1
@@ -403,6 +410,13 @@ for input_line in variant_input_file:
         mhfl['flank'] = 2
     # If a score of 0, either no MH or didn't satisfy criteria above, jump to the next input line
     if(mhfl['score'] == 0):
+        if(args.nofilter):
+            # Write line
+            voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
+            voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
+            voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
+            voutline += '\tNA\tNA\tNA\tNA'
+            variant_output_file.write(voutline + '\n')
         continue
     # Find PAM motives
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, pamseq_rev, args.pamcut)
