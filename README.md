@@ -101,7 +101,7 @@ Other optional parameters:
 - *-minMHL* the minimum length of the MH. Default is `3`.
 - *-maxConsMM*. The maximum number of consecutive mismatches allowed when extending the MH. Default is `1`.
 - *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at `50`. Relevant for large variants.
-- *-minhom* the minimum ratio of homology in the whole microhomology. Default is `0.8`.
+- *-minhom* the minimum ratio of homology in the whole microhomology. Default is `0`.
 - *-minm1L* the minimum length of the first stretch if the microhomology. Default is `3`.
 - *-PAM* the PAM sequence. Default is `NGG`.
 - *-PAMcut* the cut position relative to the PAM motif. Default is `-3`
