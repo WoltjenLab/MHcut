@@ -12,7 +12,7 @@ dnacomp = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'W': 'W', 'S': 'S', 'M': 'K',
 
 def mhTest(var_seq, fl_seq):
     '''Test for presence of microhomology between two sequences.'''
-    res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
+    res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'nbMM': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
     # ALignm the two sequences
     al_full = []
     for pos in range(min(len(var_seq), len(fl_seq))):
@@ -175,7 +175,7 @@ def alignPamsJellyfish(pams, jffile):
         line = line.split(' ')
         protos_count[line[0]] = int(line[1])
     for pam in pams:
-        pam['mm0'] = protos_count[pam['proto']]
+        pam['mm0'] = protos_count[pam['proto'].upper()]
         pam['mm1'] = 'NA'
         pam['mm2'] = 'NA'
     return pams
@@ -328,7 +328,7 @@ parser.add_argument('-nofilt', dest='nofilter', action='store_true',
                     help="Don't filter variants without MH.")
 args = parser.parse_args()
 
-if(args.nofilt):
+if(args.nofilter):
     print 'no filter mode (-nofilt): all variants will be kept and the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L'
 
 
@@ -414,8 +414,7 @@ for input_line in variant_input_file:
             # Write line
             voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
             voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
-            voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
-            voutline += '\tNA\tNA\tNA\tNA'
+            voutline += '\tNA\tNA\tNA\tNA\tNA\tNA\tNA'
             variant_output_file.write(voutline + '\n')
         continue
     # Find PAM motives
