@@ -32,7 +32,7 @@ def mhTest(var_seq, fl_seq, maxConsMM=1):
             al_trimmed = al_full[:(pos-consMM+1)]
             break
     # Cut potential last mismatch
-    if(not al_trimmed[-1]):
+    while(not al_trimmed[-1]):
         al_trimmed = al_trimmed[:-1]
     # Count consecutive matches in the beginning
     for pos in range(len(al_trimmed)):
