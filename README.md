@@ -40,17 +40,50 @@ What you need:
 - Blast. Executables available at [ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
 - Python 2.7 or higher (but not Python 3)
 - [pyfaidx](https://pypi.python.org/pypi/pyfaidx) module. Install with `pip install pyfaidx` or find alternatives [here](https://pypi.python.org/pypi/pyfaidx).
+- Optional: JellyFish. Installation instructions on [the official webpage](http://www.genome.umd.edu/jellyfish.html).
 
 ## Preparing the reference genome
 
-The following commands download the reference genome, index it and build a Blast database.
+First download and unzip the reference genome, for example:
 
 ```shell
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz
 gunzip hg38.fa.gz
+```
+
+Eventually, you can index the genome using the following command:
+
+```shell
 python indexFasta.py hg38.fa
+```
+
+Otherwise this indexing will be done automatically the first time that MHcut is run (might take a few extra minutes).
+
+By default MHcut uses BLAST to test if the protospacer sequence is unique in the genome. 
+As a faster alternative, it can also use JellyFish to search for exact matches in the genome.
+
+### Using BLAST
+
+To build the BLAST database:
+
+```shell
 makeblastdb -in hg38.fa -dbtype nucl -title hg38
 ```
+
+The files produced will be used automatically when providing the reference genome using `-ref` (see Usage below).
+
+### Using JellyFish
+
+JellyFish is a much faster alternative but can only find exact matches.
+To count 23-mers in the reference genome:
+
+```shell
+jellyfish count -m 23 -s 100M hg38.fa
+```
+
+Note: Use `-t` to use multiple cores, e.g. `-t 10` to use 10 cores.
+
+The output file `mer_counts.jf` will later be given to MHcut using `-jf` (see Usage below).
 
 ## Usage
 
@@ -66,12 +99,15 @@ Other optional parameters:
 
 - *-minvarL* the minimum length for a variant to be considered. Default is `3`.
 - *-minMHL* the minimum length of the MH. Default is `3`.
+- *-maxConsMM*. The maximum number of consecutive mismatches allowed when extending the MH. Default is `1`.
 - *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at `50`. Relevant for large variants.
 - *-minhom* the minimum ratio of homology in the whole microhomology. Default is `0.8`.
 - *-minm1L* the minimum length of the first stretch if the microhomology. Default is `3`.
 - *-PAM* the PAM sequence. Default is `NGG`.
 - *-PAMcut* the cut position relative to the PAM motif. Default is `-3`
 - *-minMHLot* the minimum length of off-target MH to be considered in the off-target check. Default is `3`.
+- *-nofilt* Don't filter variants without MH. all input variants will be present in the output *-variants* file. If used, the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L.
+- *-jf* The 23-mers count file created by JellyFish. If provided, JellyFish will be used to test protospacer uniqueness instead of BLAST.
 
 ## Output
 
@@ -141,3 +177,5 @@ GGGCCGCGATGTGCAGGGCC
 ## Next
 
 - Add a *"two-cuts"* mode for large variants.
+- Docker container to avoid installation nightmare.
+- Tutorials: how to use a different PAM, how to use the Docker container, how was the dbSNP/ClinVar analysis for the paper ran.
