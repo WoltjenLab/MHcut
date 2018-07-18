@@ -324,7 +324,7 @@ parser.add_argument('-maxTail', dest='maxTail', default=50, type=int,
                     help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True,
                     help='the prefix for the output files')
-parser.add_argument('-minhom', dest='minhom', default=0.8, type=float,
+parser.add_argument('-minhom', dest='minhom', default=0, type=float,
                     help='the minimum homology ratio')
 parser.add_argument('-minm1L', dest='minm1L', default=3, type=int,
                     help='the minimum length of first microhomology stretch')
