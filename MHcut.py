@@ -10,7 +10,7 @@ dnacomp = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'W': 'W', 'S': 'S', 'M': 'K',
            'K': 'M', 'R': 'Y', 'Y': 'R', 'V': 'B', 'B': 'V', 'H': 'D', 'D': 'H', 'N': 'N'}
 
 
-def mhTest(var_seq, fl_seq):
+def mhTest(var_seq, fl_seq, maxConsMM=1):
     '''Test for presence of microhomology between two sequences.'''
     res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'nbMM': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
     # ALignm the two sequences
@@ -20,11 +20,16 @@ def mhTest(var_seq, fl_seq):
     # First base must match, otherwise return the 'res' as is
     if(not al_full[0]):
         return(res)
-    # Trim the end of the alignment if two consecutive mismatches
+    # Trim the end of the alignment if X consecutive mismatches
     al_trimmed = al_full
+    consMM = 0
     for pos in range(len(al_full)-1):
-        if(not al_full[pos] and not al_full[pos+1]):
-            al_trimmed = al_full[:pos]
+        if(not al_full[pos]):
+            consMM += 1
+        else:
+            consMM = 0
+        if(consMM > maxConsMM):
+            al_trimmed = al_full[:(pos-consMM+1)]
             break
     # Cut potential last mismatch
     if(not al_trimmed[-1]):
@@ -306,11 +311,15 @@ parser = argparse.ArgumentParser(description='Find regions with microhomology an
 parser.add_argument('-var', dest='varfile', required=True,
                     help='the file with the variants location (BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True, help='the reference genome fasta file')
-parser.add_argument('-jf', dest='jffile', default='', help='the jellyfish file of the reference genome')
+parser.add_argument('-jf', dest='jffile', default='',
+                    help='the jellyfish file of the reference genome')
 parser.add_argument('-minvarL', dest='minvarL', default=3, type=int,
                     help='the minimum variant length')
 parser.add_argument('-minMHL', dest='minMHL', default=3, type=int,
                     help='the minimum microhomology length')
+parser.add_argument('-maxConsMM', dest='maxConsMM', default=1, type=int,
+                    help='the maximum number of consecutive mismatches' +
+                         'allowed when extending the MH.')
 parser.add_argument('-maxTail', dest='maxTail', default=50, type=int,
                     help='the maximum hanging tail allowed')
 parser.add_argument('-out', dest='outprefix', required=True,
@@ -331,9 +340,10 @@ args = parser.parse_args()
 if(args.nofilter):
     print 'no filter mode (-nofilt): all variants will be kept and the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L'
 
-
 # Open connection to reference genome
+print "Check if reference is indexed (and index it if not)..."
 reffa = Fasta(args.reffile)
+print "   Done."
 
 # Open connection to output files
 variant_output_file = open(args.outprefix + '-variants.tsv', 'w')
@@ -391,12 +401,12 @@ for input_line in variant_input_file:
     fl1seq = str(reffa[input_line[0]][(vstart-flsize-1):(vstart-1)])
     fl2seq = str(reffa[input_line[0]][vend:(vend+flsize)])
     # Test MH in each flank (reverse for flank 1) and save best MH
-    mhfl1 = mhTest(varseq[::-1], fl1seq[::-1])
+    mhfl1 = mhTest(varseq[::-1], fl1seq[::-1], args.maxConsMM)
     # If no MH or too small, or too low MH ratio or too short first microhomology stretch
     if(not args.nofilter and
        (mhfl1['mhL'] < args.minMHL or mhfl1['hom'] < args.minhom or mhfl1['m1L'] < args.minm1L)):
         mhfl1['score'] = 0
-    mhfl2 = mhTest(varseq, fl2seq)
+    mhfl2 = mhTest(varseq, fl2seq, args.maxConsMM)
     # If no MH or too small, or too low MH ratio or too short first microhomology stretch
     if(not args.nofilter and
        (mhfl2['mhL'] < args.minMHL or mhfl2['hom'] < args.minhom or mhfl2['m1L'] < args.minm1L)):
