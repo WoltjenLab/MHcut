@@ -39,8 +39,8 @@ There is a *GENEINFO* column that comes from the dbSNP VCF and another one from 
 Are they the same? Or should we really keep both?
 
 ```{r}
-mean(cv$GENEINFO == cv$GENEINFO.ClinVar)
-subset(cv, GENEINFO != GENEINFO.ClinVar) %>% select(GENEINFO, GENEINFO.ClinVar) %>% head %>% kable
+tibble(prop.same.geneinfo=mean(cv$GENEINFO == cv$GENEINFO.ClinVar)) %>% kable
+subset(cv, GENEINFO != GENEINFO.ClinVar) %>% select(GENEINFO, GENEINFO.ClinVar) %>% mutate_all(function(x)gsub('\\|', ',',x)) %>% head %>% kable
 ```
 
 The columns are the same only 88% of the time. 
@@ -101,12 +101,21 @@ Any variants annotated several times?
 
 ```{r dup}
 dup.dt = var[, .(nbentry=.N), by=.(chr, start, end)]
-dup.dt = dup.dt[, .N, by=nbentry]
-ggplot(dup.dt, aes(x=factor(nbentry), y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('number of entry with same coordinates') + ylab('variants')
+dup.dt.n = dup.dt[, .N, by=nbentry]
+ggplot(dup.dt.n, aes(x=factor(nbentry), y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('number of entry with same coordinates') + ylab('variants')
 ```
 
 Most of them are fine but a few are annotated twice.
 Some are even annotated 10 times !?
+
+Here are a few doublets:
+
+```{r}
+dup.dt = var[, nbentry:=.N, by=.(chr, start, end)]
+dup.dt[nbentry==2] %>% head(10) %>% kable
+```
+
+Because the *TOPMED* column seems mostly at fault, I would guess that these variants are duplicates in the original dbSNP VCF file.
 
 ## Variant size
 
@@ -114,8 +123,6 @@ Some are even annotated 10 times !?
 size.df = var[,.N,by=varL] %>% as.data.frame
 
 size.df %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp')
-
-size.df %>% filter(varL>1) %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp') + ggtitle('Variants > 1bp')
 
 size.df %>% filter(varL>1) %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp') + ggtitle('Variants > 1bp')
 

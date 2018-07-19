@@ -6,16 +6,18 @@ dbSNP/ClinVar exploration
 
 There is a *GENEINFO* column that comes from the dbSNP VCF and another one from the ClinVar. Are they the same? Or should we really keep both?
 
-    ## [1] 0.8838559
+|  prop.same.geneinfo|
+|-------------------:|
+|           0.8838559|
 
-|     | GENEINFO                    | GENEINFO.ClinVar      |
-|-----|:----------------------------|:----------------------|
-| 3   | PLCH2:9651|PEX10:5192       | PEX10:5192|PLCH2:9651 |
-| 10  | MIR6808:102466740|DVL1:1855 | DVL1:1855             |
-| 13  | B3GALT6:126792|SDF4:51150   | B3GALT6:126792        |
-| 15  | B3GALT6:126792|SDF4:51150   | B3GALT6:126792        |
-| 16  | B3GALT6:126792|SDF4:51150   | B3GALT6:126792        |
-| 17  | B3GALT6:126792|SDF4:51150   | B3GALT6:126792        |
+| GENEINFO                    | GENEINFO.ClinVar      |
+|:----------------------------|:----------------------|
+| PLCH2:9651,PEX10:5192       | PEX10:5192,PLCH2:9651 |
+| MIR6808:102466740,DVL1:1855 | DVL1:1855             |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
 
 The columns are the same only 88% of the time. Often a gene is "missing" in the ClinVar column. Or is it because the ClinVar column only shows the disease-relevant gene?
 
@@ -70,7 +72,24 @@ Any variants annotated several times? (Defining a variant in term of its locatio
 
 Most of them are fine but a few are annotated twice. Some are even annotated 10 times !?
 
+Here are a few doublets:
+
+| chr  |  start|    end| CAF    | TOPMED              | GENEINFO                        | MC  | AF\_EXAC | AF\_TGP |  ALLELEID| CLNSIG | GENEINFO.ClinVar | MC.ClinVar | citation | geneloc    |  varL|  mhL|  mh1L|  nbentry|
+|:-----|------:|------:|:-------|:--------------------|:--------------------------------|:----|:---------|:--------|---------:|:-------|:-----------------|:-----------|:---------|:-----------|-----:|----:|-----:|--------:|
+| chr1 |  13958|  13958| -      | 0.01379332313965341 | DDX11L1:100287102|WASH7P:653635 | INT | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     1|    1|     1|        2|
+| chr1 |  13958|  13958| -      | -                   | DDX11L1:100287102|WASH7P:653635 | INT | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     1|    1|     1|        2|
+| chr1 |  54715|  54724| -      | 0.02604166666666666 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |    10|    9|     1|        2|
+| chr1 |  54715|  54724| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |    10|    9|     1|        2|
+| chr1 |  54721|  54725| -      | 0.07098146024464831 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |     5|    2|     2|        2|
+| chr1 |  54721|  54725| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |     5|    2|     2|        2|
+| chr1 |  63736|  63738| 0.3718 | 0.24307944699286442 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     3|    3|     3|        2|
+| chr1 |  63736|  63738| 0.3718 | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     3|    3|     3|        2|
+| chr1 |  66274|  66275| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intronic   |     2|    1|     1|        2|
+| chr1 |  66274|  66275| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intronic   |     2|    1|     1|        2|
+
+Because the *TOPMED* column seems mostly at fault, I would guess that these variants are duplicates in the original dbSNP VCF file.
+
 Variant size
 ------------
 
-![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-6-1.png)![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-6-2.png)![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-6-3.png)![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-6-4.png)
+![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-7-1.png)![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-7-2.png)![](dbSNPClinVarExploration_files/figure-markdown_github/unnamed-chunk-7-3.png)
