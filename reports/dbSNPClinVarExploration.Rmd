@@ -1,0 +1,123 @@
+---
+title: "dbSNP/ClinVar exploration"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, tidy=TRUE)
+```
+
+# dbSNP/ClinVar exploration
+
+```{r load}
+## For data manipulation
+library(data.table)
+library(dplyr)
+library(magrittr)
+
+## For graphs and tables
+library(ggplot2)
+library(knitr)
+
+## Functions
+winsor <- function(x, u=10){
+  if(any(x>u)) x[x>u] = u
+  x
+}
+
+## Import merged variants
+var = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', select=c(1:3,5:7,9:12,14,16:22))
+## Subset with ClinVar variants
+cv = as.data.frame(var[!is.na(ALLELEID)])
+```
+
+## `GENEINFO` columns the same?
+
+There is a *GENEINFO* column that comes from the dbSNP VCF and another one from the ClinVar. 
+Are they the same? Or should we really keep both?
+
+```{r}
+mean(cv$GENEINFO == cv$GENEINFO.ClinVar)
+subset(cv, GENEINFO != GENEINFO.ClinVar) %>% select(GENEINFO, GENEINFO.ClinVar) %>% head %>% kable
+```
+
+The columns are the same only 88% of the time. 
+Often a gene is "missing" in the ClinVar column. Or is it because the ClinVar column only shows the disease-relevant gene?
+
+## Consistent frequencies?
+
+Are the frequency from the 1000GP, ExAC and TOPMED consistent?
+
+```{r}
+freq.df = as.data.frame(var[, c('CAF','TOPMED','AF_EXAC', 'AF_TGP')])
+convCol <- function(x) as.numeric(ifelse(x=='-', NA, x))
+freq.df %<>% mutate_all(convCol)
+freq.df %<>% filter(!is.na(CAF) | !is.na(TOPMED) | !is.na(AF_EXAC) | !is.na(AF_TGP))
+
+freq.df %>% filter(!is.na(CAF), !is.na(TOPMED)) %>% sample_n(100000) %>% ggplot(aes(CAF, TOPMED)) + geom_point(alpha=.1) + theme_bw()
+
+freq.df %>% filter(!is.na(AF_EXAC), !is.na(TOPMED)) %>% ggplot(aes(AF_EXAC, TOPMED)) + geom_point(alpha=.3) + theme_bw() + scale_x_log10() + scale_y_log10()
+
+freq.df %>% filter(!is.na(CAF), !is.na(AF_TGP)) %>% ggplot(aes(CAF, AF_TGP)) + geom_point(alpha=.1) + theme_bw()
+```
+
+Quite consistent. 
+
+## No frequency means rare?
+
+When the frequency information is missing (e.g. 1000GP frequency), is the variant rare?
+
+We would expect so: there is no information because these variants were not seen in the study because they are rare.
+Let's check that the frequency in the larger studies (TOPMED, ExAC) is on the rare side.
+
+```{r}
+freq.df %>% filter(!is.na(TOPMED)) %>% group_by(is.na(CAF)) %>% sample_n(10000) %>% ggplot(aes(x=TOPMED, colour=is.na(CAF))) + geom_density() + theme_bw() + scale_x_log10()
+
+freq.df %>% filter(!is.na(AF_EXAC)) %>% ggplot(aes(x=AF_EXAC, colour=is.na(AF_TGP))) + geom_density() + theme_bw() + scale_x_log10()
+```
+
+Yep.
+
+## Citations
+
+The *citation* column is specific to ClinVar variants.
+
+Do most variants in ClinVar have associated citations? 
+How many non-pathogenic variants have a citation associated with them?
+
+```{r}
+cv %>% group_by(CLNSIG) %>% summarize(nb.var=n(), prop.wth.citation=mean(citation!='-')) %>% arrange(desc(nb.var)) %>% head(10) %>% kable
+```
+
+Around 60% of pathogenic variants (the largest class of variants in ClinVar) have at least one associated publication.
+
+
+## Duplicates
+
+Any variants annotated several times?
+(Defining a variant in term of its location/coordinates)
+
+```{r dup}
+dup.dt = var[, .(nbentry=.N), by=.(chr, start, end)]
+dup.dt = dup.dt[, .N, by=nbentry]
+ggplot(dup.dt, aes(x=factor(nbentry), y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('number of entry with same coordinates') + ylab('variants')
+```
+
+Most of them are fine but a few are annotated twice.
+Some are even annotated 10 times !?
+
+## Variant size
+
+```{r}
+size.df = var[,.N,by=varL] %>% as.data.frame
+
+size.df %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp')
+
+size.df %>% filter(varL>1) %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp') + ggtitle('Variants > 1bp')
+
+size.df %>% filter(varL>1) %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp') + ggtitle('Variants > 1bp')
+
+var[CLNSIG=='Pathogenic',.N,by=varL] %>% filter(varL>1) %>% mutate(varL=winsor(varL,30)) %>% group_by(varL) %>% summarize(N=sum(N)) %>% ggplot(aes(x=varL, y=N)) + geom_bar(stat='identity') + theme_bw() + xlab('variant size (bp) winsorized at 30bp') + ggtitle('Pathogenic variants > 1bp')
+```
