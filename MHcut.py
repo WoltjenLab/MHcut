@@ -180,7 +180,11 @@ def alignPamsJellyfish(pams, jffile):
         line = line.split(' ')
         protos_count[line[0]] = int(line[1])
     for pam in pams:
-        pam['mm0'] = protos_count[pam['proto'].upper()]
+        if(pam['proto'].upper() in protos_count):
+            pam['mm0'] = protos_count[pam['proto'].upper()]
+        else:
+            # Edge case when there are Ns in the reference genome.
+            pam['mm0'] = 0
         pam['mm1'] = 'NA'
         pam['mm2'] = 'NA'
     return pams
