@@ -1,0 +1,152 @@
+---
+title: "Chromosome view of the variants"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, tidy=TRUE)
+```
+
+# Chromosome view of the variant density
+
+```{r load}
+## For data manipulation
+library(data.table)
+library(dplyr)
+library(magrittr)
+
+## For graphs and tables
+library(ggplot2)
+library(knitr)
+
+## Functions
+winsor <- function(x, u=10){
+  if(any(x>u)) x[x>u] = u
+  x
+}
+```
+
+We load the coordinate columnd and the MH columns that we want to use for filtering (e.g. mhL and mh1L).
+
+```{r}
+## read.table('../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', nrows=1)
+var = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', select=c(1:3,21:22))
+setkey(var, chr)
+```
+
+## Variant density
+
+For example, density of variants with `mh1L>2` in region of 1 Mbp.
+
+```{r}
+## source("https://bioconductor.org/biocLite.R")
+## biocLite("BSgenome.Hsapiens.UCSC.hg38")
+library(BSgenome.Hsapiens.UCSC.hg38)
+library(GenomicRanges)
+```
+
+First let's prepare 1 Mbp regions in the human genome.
+
+```{r cache=TRUE}
+bin.gr = tileGenome(seqlengths(BSgenome.Hsapiens.UCSC.hg38), tilewidth=1e6)
+bin.gr = do.call(c, bin.gr)
+```
+
+Now count how many variants overlap each 1 Mbp region.
+
+```{r cache=TRUE}
+var.filt = var[mh1L>2,]
+## Separately per chromosome to reduce the memory footprint
+gr.l = lapply(paste0('chr',c(1:22, 'X', 'Y')), function(chrom){
+  var.gr = makeGRangesFromDataFrame(var.filt[chrom,])
+  bin.chr = bin.gr[which(seqnames(bin.gr)==chrom)]
+  bin.chr$nb.var = countOverlaps(bin.chr, var.gr)
+  bin.chr
+})
+
+## Merge the chromosomes
+gr = do.call(c, gr.l)
+head(gr)
+```
+
+On average `r round(mean(gr$nb.var))` variants per Mbp.
+
+## IdeoViz package
+
+
+```{r}
+## source("https://bioconductor.org/biocLite.R")
+## biocLite("IdeoViz")
+library(IdeoViz)
+
+ideo <- getIdeo("hg38")
+
+plotOnIdeo(chrom = paste0('chr', 1:11),
+           ideoTable = ideo,
+           values_GR = gr,
+           value_cols = colnames(mcols(gr)),
+           col = 'indianred2',
+           addScale = F,
+           val_range=c(0, max(gr$nb.var)),
+           ## plotType='lines',
+           plotType='rect',
+           ## plot_title = paste("Differrence between", gsub(".coverage","",fileA), gsub(".coverage","",fileB), "bin",windows_size),
+           cex.axis = 0.3,
+           chromName_cex = .6,
+           vertical = T)
+
+plotOnIdeo(chrom = paste0('chr', c(12:22, 'X', 'Y')),
+           ideoTable = ideo,
+           values_GR = gr,
+           value_cols = colnames(mcols(gr)),
+           col = 'indianred2',
+           addScale = F,
+           val_range=c(0, max(gr$nb.var)),
+           ## plotType='lines',
+           plotType='rect',
+           ## plot_title = paste("Differrence between", gsub(".coverage","",fileA), gsub(".coverage","",fileB), "bin",windows_size),
+           cex.axis = 0.8,
+           chromName_cex = 0.6,
+           vertical = T)
+```
+
+
+## chromPlot package
+
+```{r}
+## source("https://bioconductor.org/biocLite.R")
+## biocLite("chromPlot")
+library(chromPlot)
+
+## (Down)Load band information from UCSC
+if(!file.exists('../data/cytoBandIdeo-hg38.txt.gz')){
+  download.file('http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBandIdeo.txt.gz', '../data/cytoBandIdeo-hg38.txt.gz')
+}
+cyto = read.table('../data/cytoBandIdeo-hg38.txt.gz', sep='\t')
+colnames(cyto) = c('Chrom','Start','End','Name','gieStain')
+cyto = subset(cyto, Chrom %in% paste0('chr', c(1:22, 'X','Y')))
+
+## (Down)Load gap information from UCSC
+if(!file.exists('../data/gap-hg38.txt.gz')){
+  download.file('http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/gap.txt.gz', '../data/gap-hg38.txt.gz')
+}
+gap = read.table('../data/gap-hg38.txt.gz', sep='\t')
+gap = gap[,c(2:4,8)]
+colnames(gap) = c('Chrom','Start','End','Name')
+gap = subset(gap, Chrom %in% paste0('chr', c(1:22, 'X','Y')))
+
+## Point graph
+chromPlot(gaps=gap, bands=cyto,
+          stat=gr,
+          statCol='nb.var',
+          statName='variants')
+
+## Line graph
+chromPlot(gaps=gap, bands=cyto,
+          stat=gr,
+          statCol='nb.var',
+          statTyp='l',
+          statName='variants')
+```
