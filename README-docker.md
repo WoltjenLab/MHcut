@@ -12,7 +12,7 @@ To run a command `command arg1 arg2 ...` within a docker container, a typical do
 docker run -v PATHL:PATHC -w PATHC imageName command arg1 arg2 ...
 ```
 
-- `-v PATHL:PATHC` links the local folder `PATHL` to the folder `FOLDC` in the container. Typically `PATHL` contains the input files and will be where we want the output files written.
+- `-v PATHL:PATHC` links the local folder `PATHL` to the folder `PATHC` in the container. Typically `PATHL` contains the input files and will be where we want the output files written.
 - `-w PATHC` means that the working directory (where the command will be run) is `PATHC`, i.e. we want to run the command in the folder that we linked with the previous parameter (and that contains the input files).
 - `imageName` is the name of the docker container. If not built manually, Docker will try to download it from Docker Hub or other platforms.
 
@@ -22,7 +22,7 @@ Hence for us, a dockerized command might look like that:
 docker run -v `pwd`:/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
 ```
 
-We link the current folder (`pwd`) with a *home* folder in the container that we will use as working directory and run the python command.
+We link the current folder (`` `pwd` ``) with a *home* folder in the container that we will use as working directory and run the python command.
 The MHcut scripts are located in the `/root` folder of the container, hence the `python /root/MHcut.py`.
 
 ## Docker workflow for MHcut
