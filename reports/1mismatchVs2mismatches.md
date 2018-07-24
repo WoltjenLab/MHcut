@@ -244,4 +244,4 @@ nb2/nb1
 
     ## [1] 1.016913
 
-We get 167189 more variants, a `round((nb2/nb1-1)*100, 2)`% increase.
+We get 167189 more variants, a 1.69% increase.

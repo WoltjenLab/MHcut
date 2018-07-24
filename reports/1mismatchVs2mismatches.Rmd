@@ -143,4 +143,4 @@ nb2-nb1
 nb2/nb1
 ```
 
-We get `r nb2-nb1` more variants, a `round((nb2/nb1-1)*100, 2)`% increase.
+We get `r nb2-nb1` more variants, a `r round((nb2/nb1-1)*100, 2)`% increase.
