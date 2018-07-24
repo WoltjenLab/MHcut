@@ -42,6 +42,8 @@ What you need:
 - [pyfaidx](https://pypi.python.org/pypi/pyfaidx) module. Install with `pip install pyfaidx` or find alternatives [here](https://pypi.python.org/pypi/pyfaidx).
 - Optional: JellyFish. Installation instructions on [the official webpage](http://www.genome.umd.edu/jellyfish.html).
 
+These dependencies are not particularly "painful" to install but we still built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
+
 ## Preparing the reference genome
 
 First download and unzip the reference genome, for example:
@@ -177,5 +179,4 @@ GGGCCGCGATGTGCAGGGCC
 ## Next
 
 - Add a *"two-cuts"* mode for large variants.
-- Docker container to avoid installation nightmare.
-- Tutorials: how to use a different PAM, how to use the Docker container, how was the dbSNP/ClinVar analysis for the paper ran.
+- Tutorials: how to use a different PAM, how was the dbSNP/ClinVar analysis for the paper ran, how to filter the guides for specific 2-cuts filtering.
