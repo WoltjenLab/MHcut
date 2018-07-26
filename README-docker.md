@@ -19,7 +19,7 @@ docker run -v PATHL:PATHC -w PATHC imageName command arg1 arg2 ...
 Hence for us, a dockerized command might look like that:
 
 ```shell
-docker run -v `pwd`:/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
 ```
 
 We link the current folder (`` `pwd` ``) with a *home* folder in the container that we will use as working directory and run the python command.
@@ -33,18 +33,18 @@ The MHcut scripts are located in the `/root` folder of the container, hence the 
 
 ```shell
 ## Prepare for BLAST
-docker run -v `pwd`:/home -w /home jmonlong/mhcut makeblastdb -in hg38.fa -dbtype nucl -title hg38
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut makeblastdb -in hg38.fa -dbtype nucl -title hg38
 ## Run MHcut
-docker run -v `pwd`:/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
 ```
 
 ## Using JellyFish
 
 ```shell
 ## Count 23-mers with JellyFish
-docker run -v `pwd`:/home -w /home jmonlong/mhcut jellyfish count -m 23 -s 100M hg38.fa
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut jellyfish count -m 23 -s 100M hg38.fa
 ## Run MHcut
-docker run -v `pwd`:/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test -jf mer_counts.jf
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test -jf mer_counts.jf
 ```
 
 *Note: `jellyfish count` takes ~1h to run on the human genome.*
