@@ -369,7 +369,7 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tpamUniq\tguidesNoOT\tguidesMinOT'
+outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tpamUniq\tguidesNoOT\tguidesMinOT\tmax2cutsDist'
 variant_output_file.write(outhead + '\n')
 gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
 guide_output_file.write(gouthead)
@@ -428,13 +428,15 @@ for input_line in variant_input_file:
             # Write line
             voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
             voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
-            voutline += '\tNA\tNA\tNA\tNA\tNA\tNA\tNA'
+            voutline += '\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA'
             variant_output_file.write(voutline + '\n')
         continue
     # Find PAM motives
     pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, pamseq_rev, args.pamcut)
     # Map protospacers to the genome and keep unique ones
     nb_pam_motives = len(pams)
+    max2cutsDist = 'NA'
+    mincut = maxcut = ''
     if(nb_pam_motives > 0):
         if(args.jffile == ''):
             pams = alignPamsBlast(pams, args.reffile)
@@ -446,7 +448,14 @@ for input_line in variant_input_file:
             # With mm0=1, there must be only one position in the genome aligning perfectly
             if pam['mm0'] == 1:
                 pams_filter.append(pam)
+                if(mincut == ''):
+                    mincut = maxcut = pam['cutPosition']
+                else:
+                    mincut = min(mincut, pam['cutPosition'])
+                    maxcut = max(maxcut, pam['cutPosition'])
         pams = pams_filter
+        if(mincut != '' and len(pams) > 1):
+            max2cutsDist = maxcut - mincut
     # Search for other MH that could be used by the MMEJ
     if len(pams) > 0 and vsize < args.maxTail*2:
         other_mh = RegionExactMH(fl1seq + varseq + fl2seq)
@@ -497,7 +506,7 @@ for input_line in variant_input_file:
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
     voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
     voutline += '\t' + str(nb_pam_motives) + '\t' + str(len(pams))
-    voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets)
+    voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets) + '\t' + str(max2cutsDist)
     variant_output_file.write(voutline + '\n')
     for pam in pams:
         guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))

@@ -130,6 +130,7 @@ Currently the columns of the output are:
 - *pamUniq*: the number of PAM motives in a valid location and with unique the protospacer.
 - *guidesNoOT*: the number of guides that have no off-target MH.
 - *guidesMinOT*: the number of off-target MH for the guide which have the least amount of off-target MH.
+- *max2cutsDist*: the distance between the two unique cuts the furthest from each other. *NA* if *pamUniq*<2.
 
 ### The "guide" file
 
