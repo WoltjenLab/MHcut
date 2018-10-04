@@ -379,7 +379,7 @@ parser.add_argument('-minhom', dest='minhom', default=0, type=float,
                     help='the minimum homology ratio')
 parser.add_argument('-minm1L', dest='minm1L', default=3, type=int,
                     help='the minimum length of first microhomology stretch')
-parser.add_argument('-PAM', dest='pamseq', default='NGG', help='the PAM motif')
+parser.add_argument('-PAM', dest='pamseq', default='NGG', help='the PAM motif. Possibly several separated by ","')
 parser.add_argument('-PAMcut', dest='pamcut', default=-3, type=int,
                     help='the cut position relative to the PAM motif')
 parser.add_argument('-minMHLot', dest='minMHLot', default=3, type=int,
@@ -478,7 +478,10 @@ for input_line in variant_input_file:
             variant_output_file.write(voutline + '\n')
         continue
     # Find PAM motives
-    pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, args.pamcut)
+    pamseqs = args.pamseq.split(',')
+    pams = []
+    for pamseq in pamseqs:
+        pams.extend(findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, pamseq, args.pamcut))
     # Map protospacers to the genome and keep unique ones
     nb_pam_motives = len(pams)
     max2cutsDist = 'NA'
