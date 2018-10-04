@@ -57,6 +57,7 @@ def mhTest(var_seq, fl_seq, maxConsMM=1):
 
 
 def aligned(seq, pamseq):
+    '''Is there a match between seq and pamseq? Takes NWSMKRYVBHD into account.'''
     align = True
     pos = 0
     while(align and pos < len(pamseq)):
@@ -64,37 +65,39 @@ def aligned(seq, pamseq):
             align = pamseq[pos] == seq[pos]
         if(pamseq[pos] == 'W'):
             align = seq[pos] == 'A' or seq[pos] == 'T'
-        if(pamseq[pos] == 'S'):
+        elif(pamseq[pos] == 'S'):
             align = seq[pos] == 'G' or seq[pos] == 'C'
-        if(pamseq[pos] == 'M'):
+        elif(pamseq[pos] == 'M'):
             align = seq[pos] == 'A' or seq[pos] == 'C'
-        if(pamseq[pos] == 'K'):
+        elif(pamseq[pos] == 'K'):
             align = seq[pos] == 'G' or seq[pos] == 'T'
-        if(pamseq[pos] == 'R'):
+        elif(pamseq[pos] == 'R'):
             align = seq[pos] == 'A' or seq[pos] == 'G'
-        if(pamseq[pos] == 'Y'):
+        elif(pamseq[pos] == 'Y'):
             align = seq[pos] == 'T' or seq[pos] == 'C'
-        if(pamseq[pos] == 'V'):
+        elif(pamseq[pos] == 'V'):
             align = seq[pos] == 'G' or seq[pos] == 'C' or seq[pos] == 'A'
-        if(pamseq[pos] == 'B'):
+        elif(pamseq[pos] == 'B'):
             align = seq[pos] == 'T' or seq[pos] == 'C' or seq[pos] == 'G'
-        if(pamseq[pos] == 'H'):
+        elif(pamseq[pos] == 'H'):
             align = seq[pos] == 'T' or seq[pos] == 'C' or seq[pos] == 'A'
-        if(pamseq[pos] == 'D'):
+        elif(pamseq[pos] == 'D'):
             align = seq[pos] == 'T' or seq[pos] == 'G' or seq[pos] == 'A'
         pos += 1
     return align
 
 
 def revComp(seq):
+    '''Return the reverse complememt of a sequence'''
     res = ''
     for pos in xrange(len(seq)):
         res = dnacomp[seq[pos]] + res
     return res
 
 
-def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamseq_rev, pamcut):
+def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamcut):
     '''Look for PAM cuts between the MH regions.'''
+    pamseq_rev = revComp(pamseq)
     seq = fl1seq + varseq + fl2seq
     min_mh_cut = min(mhfl['m1L'], 3)  # Minimum (exact) MH length that must remains after a cut.
     search_range = [len(fl1seq) - 1, len(fl1seq) + len(varseq) - min_mh_cut]
@@ -115,41 +118,69 @@ def findPAM(varseq, fl1seq, fl2seq, mhfl, maxTail, pamseq, pamseq_rev, pamcut):
         if(strand and cut_pos >= search_range[0] and cut_pos < search_range[1]
            and (cut_pos < search_range[0] + maxTail or cut_pos >= search_range[1] - maxTail)):
             # 23 bp guides including the PAM
-            if(strand == '+'):
-                proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1 + len(pamseq))]
-            else:
-                proto_seq = seq[(cut_pos + pamcut + 1 - len(pamseq)):(cut_pos + 20 + pamcut + 1)]
-            # # 20 bp guides not including the PAM
             # if(strand == '+'):
-            #     proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1)]
+            #     proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1 + len(pamseq))]
             # else:
-            #     proto_seq = seq[(cut_pos + pamcut + 1):(cut_pos + 20 + pamcut + 1)]
+            #     proto_seq = seq[(cut_pos + pamcut + 1 - len(pamseq)):(cut_pos + 20 + pamcut + 1)]
+            # # 20 bp guides not including the PAM
+            if(strand == '+'):
+                proto_seq = seq[(cut_pos - 19 - pamcut):(cut_pos - pamcut + 1)]
+            else:
+                proto_seq = seq[(cut_pos + pamcut + 1):(cut_pos + 20 + pamcut + 1)]
             pam_info = {'cutPosition': cut_pos, 'strand': strand, 'proto': proto_seq}
             # Distance to MH on each side using first stretch of perfect match or the extended MH
             pam_info['m1Dist1'] = cut_pos - search_range[0]
             pam_info['m1Dist2'] = search_range[1] - cut_pos - 1
             pam_info['mhDist1'] = cut_pos - reduced_search_range[0]
             pam_info['mhDist2'] = reduced_search_range[1] - cut_pos - 1
+            pam_info['pamseq'] = pamseq
             pams.append(pam_info)
     return(pams)
 
 
-def alignPamsBlast(pams, reffile):
+def enumN(seq):
+    '''Enumerate sequences by replacing Ns by ATCG.'''
+    if 'N' not in seq:
+        return [seq]
+    # Finds the position of the first N
+    n_pos = seq.find('N')
+    seq = list(seq)
+    res = []
+    for nuc in ['A', 'T', 'C', 'G']:
+        seq2 = seq
+        # Replace N
+        seq2[n_pos] = nuc
+        seq2 = ''.join(seq2)
+        # Recursive call in case other Ns are present
+        res.extend(enumN(seq2))
+    return res
+
+
+def alignPamsBlast(pams, reffile, include_pam=True):
     '''Align protospacers and return an updated version of the input "pams" list.'''
     fasta_file = args.outprefix + '_tempMHcut.fasta'
     ff = open(fasta_file, 'w')
     pams_hash = {}
     for pam in pams:
-        pamid = str(pam['cutPosition']) + '_' + pam['strand']
+        if(include_pam):
+            if(pam['strand'] == '+'):
+                protoguide = pam['proto'] + pam['pamseq']
+            else:
+                protoguide = revComp(pam['pamseq']) + pam['proto']
+        else:
+            protoguide = pam['proto']
         pam['mm0'] = 0
         pam['mm1'] = 0
         pam['mm2'] = 0
-        pams_hash[pamid] = pam
-        ff.write('>' + pamid + '\n' + pam['proto'] + '\n')
+        protoguides = enumN(protoguide)
+        for ii in xrange(len(protoguides)):
+            pamid = str(pam['cutPosition']) + '_' + pam['strand'] + '_' + str(ii)
+            pams_hash[pamid] = pam
+            ff.write('>' + pamid + '\n' + protoguides[ii] + '\n')
     ff.close()
     dump = open('/dev/null')
-    blast_cmd = ['blastn', '-db', reffile,  '-query', fasta_file, '-outfmt', '6',
-                 '-word_size', '10', '-max_target_seqs', '20']
+    blast_cmd = ['blastn', '-db', reffile,  '-query', fasta_file, '-outfmt',
+                 '6', '-word_size', '10', '-max_target_seqs', '20']
     blast_out = subprocess.check_output(blast_cmd, stderr=dump)
     dump.close()
     blast_out = blast_out.split('\n')
@@ -166,27 +197,32 @@ def alignPamsBlast(pams, reffile):
     return pams
 
 
-def alignPamsJellyfish(pams, jffile):
+def alignPamsJellyfish(pams, jffile, include_pam=True):
     '''Align protospacers and return an updated version of the input "pams" list.'''
     jellyfish_cmd = ['jellyfish', 'query', jffile]
+    pams_hash = {}
     for pam in pams:
-        jellyfish_cmd.append(pam['proto'])
+        if(include_pam):
+            if(pam['strand'] == '+'):
+                protoguide = pam['proto'] + pam['pamseq']
+            else:
+                protoguide = revComp(pam['pamseq']) + pam['proto']
+        else:
+            protoguide = pam['proto']
+        protoguides = enumN(protoguide)
+        for pg in protoguides:
+            pams_hash[pg] = pam
+        jellyfish_cmd.extend(protoguides)
+        pam['mm0'] = 0
+        pam['mm1'] = 'NA'
+        pam['mm2'] = 'NA'
     dump = open('/dev/null')
     jellyfish_out = subprocess.check_output(jellyfish_cmd, stderr=dump)
     dump.close()
     jellyfish_out = jellyfish_out.rstrip('\n').split('\n')
-    protos_count = {}
     for line in jellyfish_out:
         line = line.split(' ')
-        protos_count[line[0]] = int(line[1])
-    for pam in pams:
-        if(pam['proto'].upper() in protos_count):
-            pam['mm0'] = protos_count[pam['proto'].upper()]
-        else:
-            # Edge case when there are Ns in the reference genome.
-            pam['mm0'] = 0
-        pam['mm1'] = 'NA'
-        pam['mm2'] = 'NA'
+        pams_hash[line[0]]['mm0'] += int(line[1])
     return pams
 
 
@@ -378,7 +414,6 @@ cartoon_output_file.write(outhead + '\n\n')
 # Start progress bar
 sys.stdout.write('Completed: 0%')
 
-pamseq_rev = revComp(args.pamseq)
 
 # Read each line of the input file
 line_cpt = 0
@@ -432,7 +467,7 @@ for input_line in variant_input_file:
             variant_output_file.write(voutline + '\n')
         continue
     # Find PAM motives
-    pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, pamseq_rev, args.pamcut)
+    pams = findPAM(varseq, fl1seq, fl2seq, mhfl, args.maxTail, args.pamseq, args.pamcut)
     # Map protospacers to the genome and keep unique ones
     nb_pam_motives = len(pams)
     max2cutsDist = 'NA'
