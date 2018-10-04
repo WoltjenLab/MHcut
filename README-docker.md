@@ -38,7 +38,7 @@ docker run -v "`pwd`":/home -w /home jmonlong/mhcut makeblastdb -in hg38.fa -dbt
 docker run -v "`pwd`":/home -w /home jmonlong/mhcut python /root/MHcut.py -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
 ```
 
-## Using JellyFish
+### Using JellyFish
 
 ```shell
 ## Count 23-mers with JellyFish
