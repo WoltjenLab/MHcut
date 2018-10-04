@@ -418,7 +418,7 @@ variant_input_file = open(args.varfile, 'r')
 inhead = variant_input_file.next().rstrip('\n')
 outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tGC\tpamMot\tpamUniq\tguidesNoOT\tguidesMinOT\tmax2cutsDist'
 variant_output_file.write(outhead + '\n')
-gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
+gouthead = outhead + '\tprotospacer\tpamSeq\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
 guide_output_file.write(gouthead)
 cartoon_output_file.write(outhead + '\n\n')
 
@@ -558,7 +558,7 @@ for input_line in variant_input_file:
     voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets) + '\t' + str(max2cutsDist)
     variant_output_file.write(voutline + '\n')
     for pam in pams:
-        guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + str(pam['mm0']))
+        guide_output_file.write(voutline + '\t' + pam['proto'] + '\t' + pam['pamseq'] + '\t' + str(pam['mm0']))
         guide_output_file.write('\t' + str(pam['mm1']) + '\t' + str(pam['mm2']))
         guide_output_file.write('\t' + str(pam['m1Dist1']) + '\t' + str(pam['m1Dist2']))
         guide_output_file.write('\t' + str(pam['mhDist1']) + '\t' + str(pam['mhDist2']))
