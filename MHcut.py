@@ -10,6 +10,13 @@ dnacomp = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'W': 'W', 'S': 'S', 'M': 'K',
            'K': 'M', 'R': 'Y', 'Y': 'R', 'V': 'B', 'B': 'V', 'H': 'D', 'D': 'H', 'N': 'N'}
 
 
+def GC(seq):
+    seq = list(seq)
+    gc_count = seq.count('C') + seq.count('G')
+    gc_prop = float(gc_count) / len(seq)
+    return round(gc_prop, 3)
+
+
 def mhTest(var_seq, fl_seq, maxConsMM=1):
     '''Test for presence of microhomology between two sequences.'''
     res = {'score': 0, 'm1L': 0, 'mhL': 0, 'hom': 0, 'nbMM': 0, 'cartoon': '', 'seq1': '', 'seq2': ''}
@@ -53,6 +60,10 @@ def mhTest(var_seq, fl_seq, maxConsMM=1):
     # The two homologous sequences
     res['seq1'] = var_seq[0:res['mhL']]
     res['seq2'] = fl_seq[0:res['mhL']]
+    # Maximum GC content of the homologous sequences
+    gc1 = GC(res['seq1'])
+    gc2 = GC(res['seq2'])
+    res['gc'] = max(gc1, gc2)
     return(res)
 
 
@@ -405,7 +416,7 @@ variant_input_file = open(args.varfile, 'r')
 # Change colunm names here.
 # Add/remove columns here but also in the "Write in output files" section
 inhead = variant_input_file.next().rstrip('\n')
-outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tpamMot\tpamUniq\tguidesNoOT\tguidesMinOT\tmax2cutsDist'
+outhead = inhead + '\tvarL\tmhL\tmh1L\thom\tnbMM\tmhDist\tMHseq1\tMHseq2\tGC\tpamMot\tpamUniq\tguidesNoOT\tguidesMinOT\tmax2cutsDist'
 variant_output_file.write(outhead + '\n')
 gouthead = outhead + '\tprotospacer\tmm0\tmm1\tmm2\tm1Dist1\tm1Dist2\tmhDist1\tmhDist2\tnbOffTgt\tlargestOffTgt\tbotScore\tbotSize\tbotVarL\tbotGC\tbotSeq\n'
 guide_output_file.write(gouthead)
@@ -463,7 +474,7 @@ for input_line in variant_input_file:
             # Write line
             voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
             voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
-            voutline += '\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA'
+            voutline += '\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA'
             variant_output_file.write(voutline + '\n')
         continue
     # Find PAM motives
@@ -540,7 +551,7 @@ for input_line in variant_input_file:
     voutline = input_line_raw + '\t' + str(vsize) + '\t' + str(mhfl['mhL']) + '\t'
     voutline += str(mhfl['m1L']) + '\t' + str(round(mhfl['hom'], 2)) + '\t' + str(mhfl['nbMM'])
     voutline += '\t' + str(mhfl['mhdist']) + '\t' + mhfl['seq1'] + '\t' + mhfl['seq2']
-    voutline += '\t' + str(nb_pam_motives) + '\t' + str(len(pams))
+    voutline += '\t' + str(mhfl['gc']) + '\t' + str(nb_pam_motives) + '\t' + str(len(pams))
     voutline += '\t' + str(no_offtargets) + '\t' + str(min_offtargets) + '\t' + str(max2cutsDist)
     variant_output_file.write(voutline + '\n')
     for pam in pams:
