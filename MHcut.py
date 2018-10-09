@@ -222,7 +222,11 @@ def alignPamsJellyfish(pams, jffile, include_pam=True):
             protoguide = pam['proto']
         protoguides = enumN(protoguide)
         for pg in protoguides:
-            pams_hash[pg] = pam
+            pg = pg.upper()
+            if(pg in pams_hash):
+                pams_hash[pg].append(pam)
+            else:
+                pams_hash[pg] = [pam]
         jellyfish_cmd.extend(protoguides)
         pam['mm0'] = 0
         pam['mm1'] = 'NA'
@@ -233,7 +237,8 @@ def alignPamsJellyfish(pams, jffile, include_pam=True):
     jellyfish_out = jellyfish_out.rstrip('\n').split('\n')
     for line in jellyfish_out:
         line = line.split(' ')
-        pams_hash[line[0]]['mm0'] += int(line[1])
+        for pam in pams_hash[line[0]]:
+            pam['mm0'] += int(line[1])
     return pams
 
 
