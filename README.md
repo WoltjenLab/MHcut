@@ -31,7 +31,7 @@ Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0*
 
 For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
 Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
-Among other, the output contains information about the best off-target MH (shortened to *bot*) defined as the off-target MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
+Among other, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
 
 ## Install
 
@@ -107,7 +107,7 @@ Other optional parameters:
 - *-minm1L* the minimum length of the first stretch if the microhomology. Default is `3`.
 - *-PAM* the PAM sequence. Default is `NGG`.
 - *-PAMcut* the cut position relative to the PAM motif. Default is `-3`
-- *-minMHLot* the minimum length of off-target MH to be considered in the off-target check. Default is `3`.
+- *-minMHLnested* the minimum length of nested MH to be considered in the nested MH check. Default is `3`.
 - *-nofilt* Don't filter variants without MH. all input variants will be present in the output *-variants* file. If used, the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L.
 - *-jf* The 23-mers count file created by JellyFish. If provided, JellyFish will be used to test protospacer uniqueness instead of BLAST.
 
@@ -128,8 +128,8 @@ Currently the columns of the output are:
 - *MHseq1*/*MHseq2*: sequences of the MH.
 - *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
 - *pamUniq*: the number of PAM motives in a valid location and with unique the protospacer.
-- *guidesNoOT*: the number of guides that have no off-target MH.
-- *guidesMinOT*: the number of off-target MH for the guide which have the least amount of off-target MH.
+- *guidesNoNMH*: the number of guides that have no nested MH.
+- *guidesMinNMH*: the number of nested MH for the guide which have the least amount of nested MH.
 - *max2cutsDist*: the distance between the two unique cuts the furthest from each other. *NA* if *pamUniq*<2.
 
 ### The "guide" file
@@ -146,13 +146,13 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *mm2* the number of position in the genome where the sequence align with 2 mismatches.
 - *m1Dist1* and *m1Dist2*: the distance between the PAM cut the left or right stretch of perfect match, respectively.
 - *mhDist1* and *mhDist2*: the distance between the PAM cut the left or right micro-homology, respectively.
-- *nbOffTgt* the number of off-target MH.
-- *largestOffTgt* the size of the largest off-target MH.
-- *botScore* the MMEJ score of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
-- *botSize* the MH length of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
-- *botVarL* the length of the variant created by the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
-- *botGC* the GC content of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
-- *botSeq* the sequence of the **b**est **o**ff-**t**arget MH (best defined as the highest MMEJ score).
+- *nbNMH* the number of nested MH.
+- *largestNMH* the size of the largest nested MH.
+- *nmhScore* the MMEJ score of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
+- *nmhSize* the MH length of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
+- *nmhVarL* the length of the variant created by the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
+- *nmhGC* the GC content of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
+- *nmhSeq* the sequence of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 
 ### The "cartoon" file
 
