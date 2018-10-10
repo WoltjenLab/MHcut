@@ -8,4 +8,4 @@
 #SBATCH --account=rrg-bourqueg-ad
 
 module load mugqic/jellyfish/2.2.6
-jellyfish count -m 23 -s 100M -o mer_counts23.jf hg38.fa
+jellyfish count -m 23 --out-counter-len 1 -C -s 1000M -o mer_counts23.jf hg38.fa
