@@ -210,8 +210,11 @@ def alignPamsBlast(pams, reffile, include_pam=True):
 
 def alignPamsJellyfish(pams, jffile, include_pam=True):
     '''Align protospacers and return an updated version of the input "pams" list.'''
-    jellyfish_cmd = ['jellyfish', 'query', jffile]
     pams_hash = {}
+    fasta_file = args.outprefix + '_tempMHcut.fasta'
+    ff = open(fasta_file, 'w')
+    cpt = 0
+    jellyfish_cmd = ['jellyfish', 'query', '-L', jffile, '-s', fasta_file]
     for pam in pams:
         if(include_pam):
             if(pam['strand'] == '+'):
@@ -223,14 +226,21 @@ def alignPamsJellyfish(pams, jffile, include_pam=True):
         protoguides = enumN(protoguide)
         for pg in protoguides:
             pg = pg.upper()
+            ff.write('>' + str(cpt) + '\n' + pg + '\n')
+            cpt += 1
             if(pg in pams_hash):
                 pams_hash[pg].append(pam)
             else:
                 pams_hash[pg] = [pam]
-        jellyfish_cmd.extend(protoguides)
+            pg_rc = revComp(pg)
+            if(pg_rc in pams_hash):
+                pams_hash[pg_rc].append(pam)
+            else:
+                pams_hash[pg_rc] = [pam]
         pam['mm0'] = 0
         pam['mm1'] = 'NA'
         pam['mm2'] = 'NA'
+    ff.close()
     dump = open('/dev/null')
     jellyfish_out = subprocess.check_output(jellyfish_cmd, stderr=dump)
     dump.close()
