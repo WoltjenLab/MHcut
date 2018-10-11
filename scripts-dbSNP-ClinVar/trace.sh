@@ -18,7 +18,7 @@ cut -f 1-4 dbsnp-clinvar-deletion.tsv | sort -u | wc -l
 
 ## Remove duplicates
 head -1 dbsnp-clinvar-deletion.tsv > temp.tsv
-sed 1d dbsnp-clinvar-deletion.tsv | sort -k1,4 -u >> temp.tsv
+sed 1d dbsnp-clinvar-deletion.tsv | sort -k1,4 -V -u >> temp.tsv
 mv temp.tsv dbsnp-clinvar-deletion.tsv
 
 ## Get reference genome
@@ -35,8 +35,8 @@ do
     sbatch -J mhcut-$INFILE-$CHUNK -o mhcut-$INFILE-$CHUNK.out -e mhcut-$INFILE-$CHUNK.out mhcutJob.sh $INFILE $CHUNK
 done
 
-## Eventually rerun the ones that didn't finish
-REDO=`grep -c Finish mhcut-dbsnp-clinvar-deletion-*out | awk 'BEGIN{FS=":"}{if($2==0){match($1, "deletion-(.*).out", a); print a[1]}}'`
+## If necessary, rerun the ones that didn't finish
+REDO=`grep -c "100%" mhcut-dbsnp-clinvar-deletion-*out | awk 'BEGIN{FS=":"}{if($2==0){match($1, "deletion-(.*).out", a); print a[1]}}'`
 INFILE=dbsnp-clinvar-deletion
 for CHUNK in $REDO
 do
