@@ -173,6 +173,14 @@ def alignPamsBlast(pams, reffile, include_pam=True):
     ff = open(fasta_file, 'w')
     pams_hash = {}
     for pam in pams:
+        pam['mm0'] = 0
+        pam['mm1'] = 0
+        pam['mm2'] = 0
+        if('N' in pam['proto']):
+            pam['mm0'] = 'NA'
+            pam['mm1'] = 'NA'
+            pam['mm2'] = 'NA'
+            continue
         if(include_pam):
             if(pam['strand'] == '+'):
                 protoguide = pam['proto'] + pam['pamseq']
@@ -180,9 +188,6 @@ def alignPamsBlast(pams, reffile, include_pam=True):
                 protoguide = revComp(pam['pamseq']) + pam['proto']
         else:
             protoguide = pam['proto']
-        pam['mm0'] = 0
-        pam['mm1'] = 0
-        pam['mm2'] = 0
         protoguides = enumN(protoguide)
         for ii in xrange(len(protoguides)):
             pamid = str(pam['cutPosition']) + '_' + pam['strand'] + '_' + str(ii)
@@ -216,6 +221,12 @@ def alignPamsJellyfish(pams, jffile, include_pam=True):
     cpt = 0
     jellyfish_cmd = ['jellyfish', 'query', '-L', jffile, '-s', fasta_file]
     for pam in pams:
+        pam['mm0'] = 0
+        pam['mm1'] = 'NA'
+        pam['mm2'] = 'NA'
+        if('N' in pam['proto']):
+            pam['mm0'] = 'NA'
+            continue
         if(include_pam):
             if(pam['strand'] == '+'):
                 protoguide = pam['proto'] + pam['pamseq']
@@ -225,7 +236,6 @@ def alignPamsJellyfish(pams, jffile, include_pam=True):
             protoguide = pam['proto']
         protoguides = enumN(protoguide)
         for pg in protoguides:
-            pg = pg.upper()
             ff.write('>' + str(cpt) + '\n' + pg + '\n')
             cpt += 1
             if(pg in pams_hash):
@@ -237,18 +247,17 @@ def alignPamsJellyfish(pams, jffile, include_pam=True):
                 pams_hash[pg_rc].append(pam)
             else:
                 pams_hash[pg_rc] = [pam]
-        pam['mm0'] = 0
-        pam['mm1'] = 'NA'
-        pam['mm2'] = 'NA'
     ff.close()
-    dump = open('/dev/null')
-    jellyfish_out = subprocess.check_output(jellyfish_cmd, stderr=dump)
-    dump.close()
-    jellyfish_out = jellyfish_out.rstrip('\n').split('\n')
-    for line in jellyfish_out:
-        line = line.split(' ')
-        for pam in pams_hash[line[0]]:
-            pam['mm0'] += int(line[1])
+    if(cpt > 0):
+        dump = open('/dev/null')
+        jellyfish_out = subprocess.check_output(jellyfish_cmd, stderr=dump)
+        dump.close()
+        jellyfish_out = jellyfish_out.rstrip('\n').split('\n')
+        for line in jellyfish_out:
+            line = line.split(' ')
+            for pam in pams_hash[line[0]]:
+                pam['mm0'] += int(line[1])
+    os.remove(fasta_file)
     return pams
 
 
@@ -462,9 +471,9 @@ for input_line in variant_input_file:
         continue
     # Retrieve sequences. Careful with position and shift
     flsize = max(vsize, 20)
-    varseq = str(reffa[input_line[0]][(vstart-1):vend])
-    fl1seq = str(reffa[input_line[0]][(vstart-flsize-1):(vstart-1)])
-    fl2seq = str(reffa[input_line[0]][vend:(vend+flsize)])
+    varseq = str(reffa[input_line[0]][(vstart-1):vend]).upper()
+    fl1seq = str(reffa[input_line[0]][(vstart-flsize-1):(vstart-1)]).upper()
+    fl2seq = str(reffa[input_line[0]][vend:(vend+flsize)]).upper()
     # Test MH in each flank (reverse for flank 1) and save best MH
     mhfl1 = mhTest(varseq[::-1], fl1seq[::-1], args.maxConsMM)
     # If no MH or too small, or too low MH ratio or too short first microhomology stretch
