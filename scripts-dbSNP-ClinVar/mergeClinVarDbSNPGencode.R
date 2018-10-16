@@ -51,7 +51,7 @@ while(length((lines = readLines(con, n=CHUNK.SIZE)))>0){
   db.coords = paste(db$chr, db$start, db$end, sep='-')
   coordol = which(db.coords %in% cv.coords)
   if(length(coordol)>0){
-    dbcoord = merge(db[coordol, setdiff(colnames(db), c('RS'))], cv, , by=c('chr', 'start', 'end'), suffixes=c('','.ClinVar'))
+    dbcoord = merge(db[coordol, setdiff(colnames(db), c('RS'))], cv, by=c('chr', 'start', 'end'), suffixes=c('','.ClinVar'))
     db = db[-coordol,]
     coord.notol = which(!(cv.coords %in% db.coords))
     cv = cv[coord.notol,]
