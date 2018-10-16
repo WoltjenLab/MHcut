@@ -400,11 +400,13 @@ class RegionExactMH:
 # Define arguments
 parser = argparse.ArgumentParser(
     description='Find regions with microhomology and a cut position.')
-parser.add_argument('-var', dest='varfile', required=True,
-                    help='the file with the variants location '
-                    '(BED-TSV format with header)')
 parser.add_argument('-ref', dest='reffile', required=True,
                     help='the reference genome fasta file')
+parser.add_argument('-var', dest='varfile', default='',
+                    help='the file with the variants location '
+                    '(BED-TSV format with header)')
+parser.add_argument('-out', dest='outprefix', default='',
+                    help='the prefix for the output files')
 parser.add_argument('-jf', dest='jffile', default='',
                     help='the jellyfish file of the reference genome')
 parser.add_argument('-minvarL', dest='minvarL', default=3, type=int,
@@ -416,8 +418,6 @@ parser.add_argument('-maxConsMM', dest='maxConsMM', default=1, type=int,
                          'allowed when extending the MH.')
 parser.add_argument('-maxTail', dest='maxTail', default=50, type=int,
                     help='the maximum hanging tail allowed')
-parser.add_argument('-out', dest='outprefix', required=True,
-                    help='the prefix for the output files')
 parser.add_argument('-minhom', dest='minhom', default=0, type=float,
                     help='the minimum homology ratio')
 parser.add_argument('-minm1L', dest='minm1L', default=3, type=int,
@@ -438,9 +438,15 @@ if(args.nofilter):
           '-minMHL, -minhom, -minm1L')
 
 # Open connection to reference genome
-print "Check if reference is indexed (and index it if not)..."
+print "Check if reference is indexed and index it if not"
+print "...might take a minute..."
 reffa = Fasta(args.reffile)
-print "   Done."
+print "...Done."
+
+if(args.varfile == '' and args.outprefix == ''):
+    print "Use -var and -out to run MHcut. "
+    print "Run 'MHcut -h' for more info."
+    sys.exit(0)
 
 # Open connection to output files
 variant_output_file = open(args.outprefix + '-variants.tsv', 'w')

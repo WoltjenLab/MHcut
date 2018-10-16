@@ -35,28 +35,42 @@ Among other, the output contains information about the best nested MH (shortened
 
 ## Install
 
-What you need:
+*Python 2.7 or higher (but not Python 3).*
+
+Install with:
+
+```sh
+pip install MHcut
+```
+
+Or, for the latest version on GitHub:
+
+```sh
+git clone https://github.com/jmonlong/MHcut.git
+cd MHcut
+pip install .
+```
+
+You will also need **either** Blast or JellyFish.
 
 - Blast. Executables available at [ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
-- Python 2.7 or higher (but not Python 3)
-- [pyfaidx](https://pypi.python.org/pypi/pyfaidx) module. Install with `pip install pyfaidx` or find alternatives [here](https://pypi.python.org/pypi/pyfaidx).
-- Optional: JellyFish. Installation instructions on [the official webpage](http://www.genome.umd.edu/jellyfish.html).
+- JellyFish. Installation instructions on [the official webpage](http://www.genome.umd.edu/jellyfish.html).
 
-These dependencies are not particularly "painful" to install but we still built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
+These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
 
 ## Preparing the reference genome
 
 First download and unzip the reference genome, for example:
 
-```shell
+```sh
 wget http://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.fa.gz
 gunzip hg38.fa.gz
 ```
 
 Eventually, you can index the genome using the following command:
 
-```shell
-python indexFasta.py hg38.fa
+```sh
+MHcut -ref hg38.fa
 ```
 
 Otherwise this indexing will be done automatically the first time that MHcut is run (might take a few extra minutes).
@@ -68,7 +82,7 @@ As a faster alternative, it can also use JellyFish to search for exact matches i
 
 To build the BLAST database:
 
-```shell
+```sh
 makeblastdb -in hg38.fa -dbtype nucl -title hg38
 ```
 
@@ -79,7 +93,7 @@ The files produced will be used automatically when providing the reference genom
 JellyFish is a much faster alternative but can only find exact matches.
 To count 23-mers in the reference genome:
 
-```shell
+```sh
 jellyfish count -m 23 -s 100M hg38.fa
 ```
 
@@ -89,7 +103,9 @@ The output file `mer_counts.jf` will later be given to MHcut using `-jf` (see Us
 
 ## Usage
 
-	python MHcut.py -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -out MHcut-NCBI-chrX
+```sh
+MHcut -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -out MHcut-NCBI-chrX
+```
 
 The required parameters are:
 
