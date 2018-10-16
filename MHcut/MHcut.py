@@ -483,7 +483,8 @@ sys.stdout.write('Completed: 0%')
 
 # Read each line of the input file
 line_cpt = 0
-input_nb_lines = input_nb_lines / 100
+if(input_nb_lines > 100):
+    input_nb_lines = input_nb_lines / 100
 for input_line in variant_input_file:
     line_cpt += 1
     if(line_cpt % input_nb_lines == 0):
