@@ -37,7 +37,7 @@ Among other, the output contains information about the best nested MH (shortened
 
 *Python 2.7 or higher (but not Python 3).*
 
-Install with:
+Install with (this doesn't work yet, but will when MHcut is public):
 
 ```sh
 pip install MHcut
