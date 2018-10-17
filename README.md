@@ -51,7 +51,7 @@ cd MHcut
 pip install .
 ```
 
-You will also need **either** [Blast](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST) or [JellyFish](http://www.genome.umd.edu/jellyfish.html).
+You will also need **either** [Blast](http://bitly.com/1zTP2u6) or [JellyFish](http://www.genome.umd.edu/jellyfish.html).
 Follow the links or find [more information below](#install-dependencies)
 
 These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
@@ -195,7 +195,7 @@ GGGCCGCGATGTGCAGGGCC
 
 ### Blast
 
-On **OSX**, download the *.dmg* executable [here](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
+On **OSX**, download the *.dmg* executable [here](http://bitly.com/1zTP2u6).
 
 On **Ubuntu**, `sudo apt-get install ncbi-blast+`.
 
