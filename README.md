@@ -43,7 +43,7 @@ Install with:
 pip install MHcut
 ```
 
-Or, for the latest version on GitHub:
+Or for the latest version on GitHub:
 
 ```sh
 git clone https://github.com/jmonlong/MHcut.git
@@ -51,10 +51,8 @@ cd MHcut
 pip install .
 ```
 
-You will also need **either** Blast or JellyFish.
-
-- Blast. Executables available at [ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
-- JellyFish. Installation instructions on [the official webpage](http://www.genome.umd.edu/jellyfish.html).
+You will also need **either** [Blast](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST) or [JellyFish](http://www.genome.umd.edu/jellyfish.html).
+Follow the links or find [more information below](#install-dependencies)
 
 These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
 
@@ -192,6 +190,60 @@ GTTGCGGGCCGCGATGTGCA
 CGGGCCGCGATGTGCAGGGC
 GGGCCGCGATGTGCAGGGCC
 ```
+
+## Install dependencies
+
+### Blast
+
+On **OSX**, download the *.dmg* executable [here](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST).
+
+On **Ubuntu**, `sudo apt-get install ncbi-blast+`.
+
+More generally on **linux**, you can also download the executable, decompress it and update your PATH to include the folder with the binary.
+For example if you want to put it a folder `~/soft`:
+
+```sh
+mkdir -p ~/soft
+cd ~/soft
+wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz
+tar -xzvf ncbi-blast-2.7.1+-x64-linux.tar.gz
+export PATH=~/soft/ncbi-blast-2.7.1+/bin:$PATH
+```
+
+*Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
+
+### JellyFish
+
+The latest releases of [JellyFish](http://www.genome.umd.edu/jellyfish.html) provides a **macosx** binary and a **linux** binary.
+See for examples the [2.2.10 release](https://github.com/gmarcais/Jellyfish/releases/tag/v2.2.10).
+
+Once the binary downloaded it's just a matter of making it executable and updating your PATH to find it.
+For example (works for both linux and macosx binary):
+
+```sh
+chmod +x jellyfish-linux
+mkdir -p ~/bin
+mv jellyfish-linux ~/bin/jellyfish
+export PATH=~/bin:$PATH
+```
+*Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
+
+Otherwise you can always compile it from source.
+For example if you want to build it in a folder `~/soft`:
+
+```sh
+mkdir -p ~/soft
+cd ~/soft
+wget https://github.com/gmarcais/Jellyfish/releases/download/v2.2.10/jellyfish-2.2.10.tar.gz
+tar -xzvf jellyfish-2.2.10.tar.gz
+cd jellyfish-2.2.10
+./configure --prefix=`pwd`
+make
+make install
+export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
+```
+
+*Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
 
 ## Next
 
