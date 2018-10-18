@@ -80,12 +80,18 @@ class VarFlank():
             gc2 = GC(self.outer_mh_seq)
             self.gc = max(gc1, gc2)
 
-    def toString(self):
+    def toString(self, flank_info=False):
         tostr = [self.mhL, self.m1L, round(self.hom, 2), self.nbMM,
                  self.mhdist, self.inner_mh_seq, self.outer_mh_seq, self.gc]
+        if flank_info:
+            tostr = [self.flank, self.score] + tostr
         tostr = '\t'.join([str(ii) for ii in tostr])
         return tostr
 
 
-def headers():
-    return ['mhL', 'mh1L', 'hom', 'nbMM', 'mhDist', 'MHseq1', 'MHseq2', 'GC']
+def headers(flank_info=False):
+    headers = ['mhL', 'mh1L', 'hom', 'nbMM', 'mhDist', 'MHseq1', 'MHseq2',
+               'GC']
+    if flank_info:
+        headers = ['flank', 'mhScore'] + headers
+    return headers

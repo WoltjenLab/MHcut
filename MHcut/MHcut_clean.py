@@ -21,9 +21,9 @@ def mhcut(args):
         sys.exit(0)
 
     # Open connection to output files
-    variant_output_file = open(args.outprefix + '-variants.tsv', 'w')
-    guide_output_file = open(args.outprefix + '-guides.tsv', 'w')
-    cartoon_output_file = open(args.outprefix + '-cartoons.tsv', 'w')
+    variant_outfile = open(args.outprefix + '-variants.tsv', 'w')
+    guide_outfile = open(args.outprefix + '-guides.tsv', 'w')
+    cartoon_outfile = open(args.outprefix + '-cartoons.tsv', 'w')
 
     # Open connection to input file
     variant_input_file = open(args.varfile, 'r')
@@ -41,12 +41,12 @@ def mhcut(args):
     # Add/remove columns here but also in the "Write in output files" section
     inhead = variant_input_file.next().rstrip('\n')
     outhead = inhead + '\tvarL'
-    outhead += '\t' + '\t'.join(flanks.headers())
+    outhead += '\t' + '\t'.join(flanks.headers(flank_info=args.twofls))
     outhead += '\t' + '\t'.join(pam_utils.headersVariants())
-    variant_output_file.write(outhead + '\n')
+    variant_outfile.write(outhead + '\n')
     gouthead = outhead + '\t' + '\t'.join(pam_utils.headersGuides())
-    guide_output_file.write(gouthead + '\n')
-    cartoon_output_file.write(outhead + '\n\n')
+    guide_outfile.write(gouthead + '\n')
+    cartoon_outfile.write(outhead + '\n\n')
 
     # Start progress bar
     pbar = tqdm.tqdm(total=input_nb_lines)
@@ -88,62 +88,71 @@ def mhcut(args):
                 var_fl_2.m1L < args.minm1L)):
             var_fl_2.score = 0
 
-        # Using the alignment score, the best flank is chosen
-        if(var_fl_1.score > var_fl_2.score):
-            var_fl = var_fl_1
+        if args.twofls:
+            # Two-flanks mode, i.e. both flank configurations are tested
+            # (inner-outer and outer-inner)
+            flank_cand = [var_fl_1, var_fl_2]
         else:
-            var_fl = var_fl_2
-
-        # If a score of 0, either no MH or didn't satisfy criteria above,
-        # jump to the next input line
-        if(var_fl.score == 0):
-            if(args.nofilter):
-                voutline = '\t'.join([input_line_raw, str(var.vsize),
-                                      var_fl.toString(),
-                                      pam_utils.headersVariants(NAs=True)])
-                variant_output_file.write(voutline + '\n')
-            continue
-
-        # Find PAM motives
-        pamseqs = args.pamseq.split(',')
-        pams = pam_utils.PAMs(var_fl, pamseqs, cut_offset=args.pamcut,
-                              max_tail=args.maxTail)
-
-        # Align protospacers
-        if(pams.nbPAMs() > 0):
-            if(args.jffile == ''):
-                pams.alignPamsBlast(args.reffile, prefix=args.outprefix)
+            # Using the alignment score, the best flank configuration is chosen
+            if(var_fl_1.score > var_fl_2.score):
+                flank_cand = [var_fl_1]
             else:
-                pams.alignPamsJellyfish(args.jffile, prefix=args.outprefix)
+                flank_cand = [var_fl_2]
 
-        # We define a unique pam if the protospacer maps exactly
-        # at maximum one position in the genome.
-        pams.annotateUnique(max_mm0=1)
+        for var_fl in flank_cand:
+            # If a score of 0, either no MH or didn't satisfy criteria above,
+            # jump to the next input line
+            if var_fl.score == 0:
+                if args.nofilter:
+                    voutline = '\t'.join([input_line_raw, str(var.vsize),
+                                          var_fl.toString(args.twofls),
+                                          pam_utils.headersVariants(NAs=True)])
+                    variant_outfile.write(voutline + '\n')
+                continue
 
-        # Looking for nested MH only in unique PAMs
-        pams.findNestedMH(var, max_tail=args.maxTail, min_l_nmh=args.minLnmh,
-                          uniq_pam_only=True)
+            # Find PAM motives
+            pamseqs = args.pamseq.split(',')
+            pams = pam_utils.PAMs(var_fl, pamseqs, cut_offset=args.pamcut,
+                                  max_tail=args.maxTail)
 
-        # Write variant output line
-        voutline = '\t'.join([input_line_raw, str(var.vsize),
-                             var_fl.toString(), pams.toStringVariants()])
-        variant_output_file.write(voutline + '\n')
+            # Align protospacers
+            if pams.nbPAMs() > 0:
+                if args.jffile == '':
+                    pams.alignPamsBlast(args.reffile, prefix=args.outprefix)
+                else:
+                    pams.alignPamsJellyfish(args.jffile, prefix=args.outprefix)
 
-        # Write guides output lines
-        goutline = pams.toStringGuides(voutline=voutline, uniq_pam_only=True)
-        guide_output_file.write(goutline)
+            # We define a unique pam if the protospacer maps exactly
+            # at maximum one position in the genome.
+            pams.annotateUnique(max_mm0=1)
 
-        # Write the cartoon
-        cartoon_output_file.write(voutline + '\n')
-        cartoon_output_file.write(cartoon.drawCartoon(var, var_fl, pams,
+            # Looking for nested MH only in unique PAMs
+            pams.findNestedMH(var, max_tail=args.maxTail,
+                              min_l_nmh=args.minLnmh,
+                              uniq_pam_only=True)
+
+            # Write variant output line
+            voutline = '\t'.join([input_line_raw, str(var.vsize),
+                                 var_fl.toString(args.twofls),
+                                  pams.toStringVariants()])
+            variant_outfile.write(voutline + '\n')
+
+            # Write guides output lines
+            goutline = pams.toStringGuides(voutline=voutline,
+                                           uniq_pam_only=True)
+            guide_outfile.write(goutline)
+
+            # Write the cartoon
+            cartoon_outfile.write(voutline + '\n')
+            cartoon_outfile.write(cartoon.drawCartoon(var, var_fl, pams,
                                                       max_tail=args.maxTail))
-        cartoon_output_file.write('\n\n')
+            cartoon_outfile.write('\n\n')
 
     pbar.update(input_nb_lines % 100)
     pbar.close()
     print '\nDone.\n'
 
     variant_input_file.close()
-    variant_output_file.close()
-    guide_output_file.close()
-    cartoon_output_file.close()
+    variant_outfile.close()
+    guide_outfile.close()
+    cartoon_outfile.close()

@@ -40,7 +40,7 @@ def main():
                         help='the minimum length of the nested microhomology')
     parser.add_argument('-nofilt', dest='nofilter', action='store_true',
                         help="Don't filter variants without MH.")
-    parser.add_argument('-2fl', dest='twofls', action='store_true',
+    parser.add_argument('-2fls', dest='twofls', action='store_true',
                         help='Report results for both flank configuration'
                         'instead of the one with highest MH.')
     parser.add_argument('-v2', dest='v2', action='store_true',
