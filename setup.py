@@ -10,4 +10,4 @@ setup(name='MHcut',
       license='MIT',
       packages=['MHcut'],
       install_requires=find_packages('MHcut'),
-      entry_points={'console_scripts': ['MHcut = MHcut.MHcut']})
+      entry_points={'console_scripts': ['MHcut = MHcut.run_mhcut:main']})
