@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 setup(name='MHcut',
@@ -9,5 +9,5 @@ setup(name='MHcut',
       author_email='jean.monlong@gmail.com',
       license='MIT',
       packages=['MHcut'],
-      install_requires=find_packages('MHcut'),
+      install_requires=['pyfaidx', 'tqdm', 'argparse'],
       entry_points={'console_scripts': ['MHcut = MHcut.run_mhcut:main']})

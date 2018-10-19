@@ -9,8 +9,6 @@ RUN apt-get update \
     libldap2-dev python-dev libxml2-dev libkrb5-dev \
     libgsl0-dev libqt4-dev php5-mcrypt python-pip wget
 
-RUN pip install pyfaidx
-
 WORKDIR /root
 
 RUN wget https://github.com/gmarcais/Jellyfish/releases/download/v2.2.10/jellyfish-2.2.10.tar.gz && \
@@ -29,5 +27,7 @@ RUN wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.7.1+-x
 
 ENV PATH "/root/ncbi-blast-2.7.1+/bin:${PATH}"
 
-COPY MHcut.py ./
-COPY indexFasta.py ./
+COPY . /root/MHcut
+
+RUN pip install -e /root/MHcut
+
