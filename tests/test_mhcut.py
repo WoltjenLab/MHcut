@@ -23,7 +23,7 @@ class TestFaidx(unittest.TestCase):
 
     def test_faidx(self):
         # Call function
-        cmd = ['python', 'MHcut/MHcut.py', '-ref', 'temp.fa']
+        cmd = ['python', 'MHcut/run_mhcut.py', '-ref', 'temp.fa']
         # dump = open('/dev/null')
         cmd_out = subprocess.check_output(cmd)
         # dump.close()
@@ -59,7 +59,7 @@ class TestMHcutNoPam(unittest.TestCase):
 
     def test_mhcut(self):
         # Call function
-        cmd = ['python', 'MHcut/MHcut.py', '-ref', 'temp.fa', '-var',
+        cmd = ['python', 'MHcut/run_mhcut.py', '-ref', 'temp.fa', '-var',
                'temp.tsv', '-out', 'temp']
         # dump = open('/dev/null')
         cmd_out = subprocess.check_output(cmd)
