@@ -140,17 +140,15 @@ class PAMs():
         in the genome aligning perfectly.
         '''
         for pam in self.pams:
-            # TODO: use flexible condition once this version is validated.
-            # if(pam.mm0 > 0 and pam.mm0 <= max_mm0 and
-            #    pam.mm1 <= max_mm1 and pam.mm2 <= max_mm2):
-            if pam.mm0 == 1:
+            if(pam.mm0 > 0 and pam.mm0 <= max_mm0 and
+               pam.mm1 <= max_mm1 and pam.mm2 <= max_mm2):
                 pam.uniq = True
 
-    def alignPamsBlast(self, reffile, include_pam=True, prefix='blast'):
+    def alignPamsBlast(self, reffile, include_pam=True, prefix='blast',
+                       chunk_size=30):
         '''Align protospacers and update the PAMs.'''
-        # Chunks PAMs to avoid memory explosion
+        # Chunk PAMs to avoid memory explosion
         pams_chunks = []
-        chunk_size = 20
         for ii in range(0, len(self.pams), chunk_size):
             pams_chunks.append(self.pams[ii:(ii + chunk_size)])
         fasta_file = prefix + '_tempMHcut.fasta'
@@ -187,8 +185,12 @@ class PAMs():
                 line = line.split('\t')
                 if len(line) > 1:
                     pam_cand = pams_hash[line[0]]
-                    # TODO fix next line once this version is validated
-                    if int(line[3]) == len(pam_cand.proto):
+                    # If that the blast hit covers the full sequence
+                    protoguide_length = len(pam_cand.proto)
+                    if include_pam:
+                        protoguide_length += len(pam_cand.pamseq)
+                    if int(line[3]) == protoguide_length:
+                        # Update appropriate mismatch count
                         if int(line[4]) == 0:
                             pam_cand.mm0 += 1
                         if int(line[4]) == 1:

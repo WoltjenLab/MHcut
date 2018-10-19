@@ -133,7 +133,8 @@ def mhcut(args):
             # Align protospacers
             if pams.nbPAMs() > 0:
                 if args.jffile == '':
-                    pams.alignPamsBlast(args.reffile, prefix=args.outprefix)
+                    pams.alignPamsBlast(args.reffile, prefix=args.outprefix,
+                                        chunk_size=args.chunkS)
                 else:
                     pams.alignPamsJellyfish(args.jffile, prefix=args.outprefix)
 
@@ -164,7 +165,7 @@ def mhcut(args):
             cartoon_outfile.write('\n\n')
 
     # Update and close progress bar
-    pbar.update(input_nb_lines % 100)
+    pbar.update(pbar.maxinterval-pbar.last_print_n)
     pbar.close()
     print '\nDone.\n'
 
