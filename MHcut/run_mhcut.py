@@ -19,8 +19,8 @@ def main():
     parser.add_argument('-2fls', dest='twofls', action='store_true',
                         help='report results for both flank configurations '
                         'instead of the one with strongest MH.')
-    parser.add_argument('-v2', dest='v2', action='store_true',
-                        help='cleaner version.')
+    parser.add_argument('-v0', dest='v0', action='store_true',
+                        help='use older version.')
 
     # Parameters related to protospacer alignment
     align_pars = parser.add_argument_group('Protospacer alignment')
@@ -76,10 +76,10 @@ def main():
               'following parameters will NOT be taken into account: ' +
               '-minMHL, -minhom, -minm1L')
 
-    if args.v2:
-        MHcut_clean.mhcut(args)
-    else:
+    if args.v0:
         MHcut.mhcut(args)
+    else:
+        MHcut_clean.mhcut(args)
 
 
 if __name__ == "__main__":
