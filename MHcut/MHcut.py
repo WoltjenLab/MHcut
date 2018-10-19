@@ -201,7 +201,7 @@ def alignPamsBlast(pams, reffile, include_pam=True, prefix='blast'):
     ff.close()
     dump = open('/dev/null')
     blast_cmd = ['blastn', '-db', reffile,  '-query', fasta_file, '-outfmt',
-                 '6', '-word_size', '10', '-max_target_seqs', '20']
+                 '6', '-word_size', '17', '-max_target_seqs', '20']
     blast_out = subprocess.check_output(blast_cmd, stderr=dump)
     dump.close()
     blast_out = blast_out.split('\n')

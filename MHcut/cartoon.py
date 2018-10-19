@@ -1,8 +1,15 @@
+'''
+Function to draw the cartoon.
+Would benefit from some cleaning...
+'''
+
+
 def drawCartoon(var, var_fl, pams, max_tail=50):
+    '''Draw a cartoon of the MH and PAM cuts.'''
     out_lines = ['', '', '']
     # Cartoon: alignment line
     white_spaces_before = len(var.fl1seq) - var_fl.mhL
-    if(var_fl.flank == 2):
+    if var_fl.flank == 2:
         white_spaces_before += var_fl.mhL + 1
     white_spaces_before = ' ' * white_spaces_before
     white_spaces_between = ' ' * (var.vsize - var_fl.mhL + 1)
@@ -14,15 +21,17 @@ def drawCartoon(var, var_fl, pams, max_tail=50):
     size_cartoon = len(var.fl1seq) + len(var.fl2seq) + var.vsize
     # Init with '_' everywhere
     pam_cartoon = ['_' for i in range(size_cartoon)]
+    pams_uniq = []
     for pam in pams.pams:
-        if(pam.uniq):
-            if(pam.strand == '+'):
-                if(pam_cartoon[pam.cutPosition + 1] != '_'):
+        if pam.uniq:
+            pams_uniq.append(pam)
+            if pam.strand == '+':
+                if pam_cartoon[pam.cutPosition + 1] != '_':
                     pam_cartoon[pam.cutPosition + 1] = 'X'
                 else:
                     pam_cartoon[pam.cutPosition + 1] = '\\'
             else:
-                if(pam_cartoon[pam.cutPosition] != '_'):
+                if pam_cartoon[pam.cutPosition] != '_':
                     pam_cartoon[pam.cutPosition] = 'X'
                 else:
                     pam_cartoon[pam.cutPosition] = '/'
@@ -40,14 +49,14 @@ def drawCartoon(var, var_fl, pams, max_tail=50):
         cartoon_part2 = [len(var.fl1seq) + var.vsize - var_fl.mhL - max_tail,
                          len(var.fl1seq) + var.vsize + flank_buffer]
         # If second flank was used, shift the positions
-        if(var_fl.flank == 2):
+        if var_fl.flank == 2:
             cartoon_part1 = [p + var_fl.mhL + 1 for p in cartoon_part1]
             cartoon_part2 = [p + var_fl.mhL + 1 for p in cartoon_part2]
         # Sanity checks that the position are in the correct range
         cartoon_part1[0] = max(cartoon_part1[0], 0)
         # Update lines (if the two part overlaps merge them into one)
         out_lines_trimmed = []
-        if(cartoon_part1[1] + 1 > cartoon_part2[0]):
+        if cartoon_part1[1] + 1 > cartoon_part2[0]:
             cartoon_part1[1] = cartoon_part2[1]
             for line in out_lines:
                 line = line[cartoon_part1[0]:min(cartoon_part1[1], len(line))]
@@ -62,11 +71,11 @@ def drawCartoon(var, var_fl, pams, max_tail=50):
                 out_lines_trimmed.append(line)
         out_lines = out_lines_trimmed
     # Cartoon: protospacers sequence
-    if(len(pams.pams) > 0):
+    if len(pams_uniq) > 0:
         proto_head = 'Protospacers, m1Dist1, m1Dist2, mhDist1, '
         proto_head += 'mhDist2, bestOffTarget:'
         out_lines.append(proto_head)
-        for pam in pams.pams:
+        for pam in pams_uniq:
             coutline = '\t'.join([pam.proto, str(pam.m1Dist1),
                                   str(pam.m1Dist2), str(pam.mhDist1),
                                   str(pam.mhDist2), str(pam.bnmh_seq)])

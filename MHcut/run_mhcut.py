@@ -5,7 +5,7 @@ import MHcut_clean
 
 
 def main():
-        # Define arguments
+    # Define arguments
     parser = argparse.ArgumentParser(
         description='Find regions with microhomology and a cut position.')
     parser.add_argument('-ref', dest='reffile', required=True,
@@ -45,14 +45,17 @@ def main():
                         'instead of the one with highest MH.')
     parser.add_argument('-v2', dest='v2', action='store_true',
                         help='clean version')
+
+    # Parse arguments
     args = parser.parse_args(sys.argv[1:])
 
-    if(args.nofilter):
+    # Warnings that filtering arguments are not used in nofilter mode
+    if args.nofilter:
         print('no filter mode (-nofilt): all variants will be kept and the ' +
               'following parameters will NOT be taken into account: ' +
               '-minMHL, -minhom, -minm1L')
 
-    if(args.v2):
+    if args.v2:
         MHcut_clean.mhcut(args)
     else:
         MHcut.mhcut(args)

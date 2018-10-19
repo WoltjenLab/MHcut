@@ -1,6 +1,15 @@
+'''
+Main workflow:
+- Opening the input files.
+- Reading each variant.
+- Looking for MH.
+- Aligning protospacers.
+- Looking for nested MH.
+- Writing in the output files.
+'''
+
 from pyfaidx import Fasta
 import sys
-# import re
 import flanks
 import pam_utils
 import variant
@@ -9,13 +18,15 @@ import tqdm
 
 
 def mhcut(args):
+    '''Main workflow for input arguments "args".'''
+    
     # Open connection to reference genome
     print "Check if reference is indexed and index it if not"
     print "...might take a minute..."
     reffa = Fasta(args.reffile)
     print "...Done."
 
-    if(args.varfile == '' and args.outprefix == ''):
+    if args.varfile == '' and args.outprefix == '':
         print "Use -var and -out to run MHcut. "
         print "Run 'MHcut -h' for more info."
         sys.exit(0)
@@ -54,23 +65,26 @@ def mhcut(args):
     # Read each line of the input file
     line_cpt = 0
     for input_line in variant_input_file:
+        # Update progress bar every 100 variants
         line_cpt += 1
-        if(line_cpt % 100 == 0):
+        if line_cpt % 100 == 0:
             pbar.update(100)
+        # Parse line from the variant input
         input_line_raw = input_line.rstrip('\n')
         input_line = input_line_raw.split('\t')
         vstart = int(input_line[1])
         vend = int(input_line[2])
-        if(vend - vstart + 1 < args.minvarL):
+        if vend - vstart + 1 < args.minvarL:
             # If variant is too small or too big,
             # skip and jump to next iteration
             continue
-        if(input_line[0] not in reffa.keys()):
+        if input_line[0] not in reffa.keys():
             # If chromosome name not in reference, skip variant
             continue
+        # Create a variant object with the reference sequence
         var = variant.Variant(input_line[0], vstart, vend, reffa)
 
-        # Test MH in each flank (reverse for flank 1)
+        # Test MH in flank configuration 1
         var_fl_1 = flanks.VarFlank(var, flank=1)
         var_fl_1.findMH(args.maxConsMM)
         # If no MH or too small, or too low MH ratio or
@@ -79,8 +93,7 @@ def mhcut(args):
            and (var_fl_1.mhL < args.minMHL or var_fl_1.hom < args.minhom or
                 var_fl_1.m1L < args.minm1L)):
             var_fl_1.score = 0
-
-        # Same for other flank
+        # Test MH in flank configuration 1
         var_fl_2 = flanks.VarFlank(var, flank=2)
         var_fl_2.findMH(args.maxConsMM)
         if(not args.nofilter
@@ -91,22 +104,24 @@ def mhcut(args):
         if args.twofls:
             # Two-flanks mode, i.e. both flank configurations are tested
             # (inner-outer and outer-inner)
-            flank_cand = [var_fl_1, var_fl_2]
+            flank_cfgs = [var_fl_1, var_fl_2]
         else:
             # Using the alignment score, the best flank configuration is chosen
-            if(var_fl_1.score > var_fl_2.score):
-                flank_cand = [var_fl_1]
+            if var_fl_1.score > var_fl_2.score:
+                flank_cfgs = [var_fl_1]
             else:
-                flank_cand = [var_fl_2]
+                flank_cfgs = [var_fl_2]
 
-        for var_fl in flank_cand:
+        # Continue analysis on each flank configuration of interest
+        for var_fl in flank_cfgs:
             # If a score of 0, either no MH or didn't satisfy criteria above,
-            # jump to the next input line
+            # so skip the rest
             if var_fl.score == 0:
+                # If nofilter mode, print the variant output line
                 if args.nofilter:
                     voutline = '\t'.join([input_line_raw, str(var.vsize),
-                                          var_fl.toString(args.twofls),
-                                          pam_utils.headersVariants(NAs=True)])
+                                          var_fl.toString(args.twofls)] +
+                                         pam_utils.headersVariants(NAs=True))
                     variant_outfile.write(voutline + '\n')
                 continue
 
@@ -148,10 +163,12 @@ def mhcut(args):
                                                       max_tail=args.maxTail))
             cartoon_outfile.write('\n\n')
 
+    # Update and close progress bar
     pbar.update(input_nb_lines % 100)
     pbar.close()
     print '\nDone.\n'
 
+    # Close connections to input and output files
     variant_input_file.close()
     variant_outfile.close()
     guide_outfile.close()

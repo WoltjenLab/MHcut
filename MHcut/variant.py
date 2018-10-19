@@ -1,5 +1,7 @@
 class Variant():
     '''A variant with flanking sequence.'''
+    # A bit of a useless class but nicer than passing multiple objects
+    # or a dictionnary around.
     def __init__(self, v_chr, vstart, vend, reffa):
         self.vsize = vend - vstart + 1
         # Retrieve sequences. Careful with position and shift
