@@ -257,4 +257,5 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
     - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and portal.
     - Transfer repo to Woltjen lab repo.
 	- Update READMEs with new repo path.
-	- Setup Dockerhub
+	- Setup Dockerhub.
+	- Register package on PyPi.
