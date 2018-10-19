@@ -403,8 +403,8 @@ def mhcut(args):
     reffa = Fasta(args.reffile)
     print "...Done."
 
-    if(args.varfile == '' and args.outprefix == ''):
-        print "Use -var and -out to run MHcut. "
+    if(args.varfile == ''):
+        print "Use -ref and -var to run MHcut. "
         print "Run 'MHcut -h' for more info."
         sys.exit(0)
 

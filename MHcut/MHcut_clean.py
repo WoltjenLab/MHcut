@@ -26,8 +26,8 @@ def mhcut(args):
     reffa = Fasta(args.reffile)
     print "...Done."
 
-    if args.varfile == '' and args.outprefix == '':
-        print "Use -var and -out to run MHcut. "
+    if(args.varfile == ''):
+        print "Use -ref and -var to run MHcut. "
         print "Run 'MHcut -h' for more info."
         sys.exit(0)
 
@@ -61,14 +61,19 @@ def mhcut(args):
 
     # Start progress bar
     pbar = tqdm.tqdm(total=input_nb_lines)
+    # When to update progress
+    if input_nb_lines < 100:
+        update_pb = 1
+    else:
+        update_pb = int(input_nb_lines/100)
 
     # Read each line of the input file
     line_cpt = 0
     for input_line in variant_input_file:
         # Update progress bar every 100 variants
         line_cpt += 1
-        if line_cpt % 100 == 0:
-            pbar.update(100)
+        if line_cpt % update_pb == 0:
+            pbar.update(update_pb)
         # Parse line from the variant input
         input_line_raw = input_line.rstrip('\n')
         input_line = input_line_raw.split('\t')
