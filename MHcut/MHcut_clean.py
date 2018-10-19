@@ -10,6 +10,7 @@ Main workflow:
 
 from pyfaidx import Fasta
 import sys
+import os
 import flanks
 import pam_utils
 import variant
@@ -19,12 +20,15 @@ import tqdm
 
 def mhcut(args):
     '''Main workflow for input arguments "args".'''
-    
+
     # Open connection to reference genome
-    print "Check if reference is indexed and index it if not"
-    print "...might take a minute..."
+    fa_indexed = os.path.isfile(args.reffile + '.fai')
+    if not fa_indexed:
+        print "The reference file doesn't seem to be indexed."
+        print "Indexing now (might take a minute)..."
     reffa = Fasta(args.reffile)
-    print "...Done."
+    if not fa_indexed:
+        print "Indexing completed."
 
     if(args.varfile == ''):
         print "Use -ref and -var to run MHcut. "
@@ -70,10 +74,6 @@ def mhcut(args):
     # Read each line of the input file
     line_cpt = 0
     for input_line in variant_input_file:
-        # Update progress bar every 100 variants
-        line_cpt += 1
-        if line_cpt % update_pb == 0:
-            pbar.update(update_pb)
         # Parse line from the variant input
         input_line_raw = input_line.rstrip('\n')
         input_line = input_line_raw.split('\t')
@@ -168,9 +168,14 @@ def mhcut(args):
             cartoon_outfile.write(cartoon.drawCartoon(var, var_fl, pams,
                                                       max_tail=args.maxTail))
             cartoon_outfile.write('\n\n')
+        # Update progress bar every couple of variants
+        line_cpt += 1
+        if line_cpt % update_pb == 0:
+            pbar.update(update_pb)
 
     # Update and close progress bar
-    pbar.update(pbar.maxinterval-pbar.last_print_n)
+    if pbar.total > pbar.last_print_n:
+        pbar.update(pbar.total - pbar.last_print_n)
     pbar.close()
     print '\nDone.\n'
 
