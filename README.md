@@ -52,7 +52,7 @@ pip install .
 ```
 
 You will also need **either** [Blast](http://bitly.com/1zTP2u6) or [JellyFish](http://www.genome.umd.edu/jellyfish.html).
-Follow the links or find [more information below](#install-dependencies)
+Follow the links or find [more information below](#install-dependencies).
 
 These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
 
