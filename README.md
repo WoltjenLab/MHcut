@@ -247,5 +247,14 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 
 ## Next
 
-- Add a *"two-cuts"* mode for large variants.
-- Tutorials: how to use a different PAM, how was the dbSNP/ClinVar analysis for the paper ran, how to filter the guides for specific 2-cuts filtering.
+- Tutorials: 
+    - How to use a different PAM.
+	- How was the dbSNP/ClinVar analysis for the paper ran.
+	- How to filter the guides for specific 2-cuts filtering.
+	- Benchmark: 1 cons vs 2 cons; best flanks vs two flanks, blast vs jellyfish.
+
+- Before submitting:
+    - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and portal.
+    - Transfer repo to Woltjen lab repo.
+	- Update READMEs with new repo path.
+	- Setup Dockerhub
