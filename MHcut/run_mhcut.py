@@ -1,7 +1,7 @@
 import argparse
 import sys
 import MHcut
-import MHcut_clean
+import MHcut_old
 
 
 def main():
@@ -77,9 +77,9 @@ def main():
               '-minMHL, -minhom, -minm1L')
 
     if args.v0:
-        MHcut.mhcut(args)
+        MHcut_old.mhcut(args)
     else:
-        MHcut_clean.mhcut(args)
+        MHcut.mhcut(args)
 
 
 if __name__ == "__main__":
