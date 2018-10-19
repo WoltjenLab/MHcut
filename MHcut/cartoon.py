@@ -80,4 +80,4 @@ def drawCartoon(var, var_fl, pams, max_tail=50):
                                   str(pam.m1Dist2), str(pam.mhDist1),
                                   str(pam.mhDist2), str(pam.bnmh_seq)])
             out_lines.append(coutline)
-    return('\n'.join(out_lines))
+    return('\n'.join(out_lines) + '\n')
