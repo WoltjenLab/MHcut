@@ -8,6 +8,7 @@ These files are rendered into reports (`.md` files).
 
 - [Figures and tables on the latest dnSNP/ClinVar analysis](MHcut-Figures-dbSNPClinVar.md).
 - [Density of variant with MH in a "chromosome" view](chromosomeView.md).
+- [Number of genes with exonic variants](GeneOverlap.md)
 
 ### Variant databases
 
@@ -17,6 +18,7 @@ These files are rendered into reports (`.md` files).
 ### How To
 
 - [How to filter the "guide" output](pamFiltering.md).
+- [Overlap variants and gene annotation](GeneOverlap.md)
 
 ### Benchmark
 
