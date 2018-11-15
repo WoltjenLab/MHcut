@@ -58,29 +58,6 @@ done
 
 #
 ##
-### Allowing 2 consecutive mismatches
-##
-#
-## Split input and run MHcut in parallel
-INFILE=dbsnp-clinvar-deletion
-for CHUNK in `seq 1 30`
-do
-    sbatch -J mhcut2MM-$INFILE-$CHUNK -o mhcut2MM-$INFILE-$CHUNK.out -e mhcut2MM-$INFILE-$CHUNK.out mhcutJob-2MM.sh $INFILE $CHUNK
-done
-
-## Merge MHcut results
-for TYPE in variants guides cartoons
-do
-    head -1 mhcut-dbsnp-clinvar-deletion-2MM-1-$TYPE.tsv > mhcut-dbsnp-clinvar-deletion-2MM-$TYPE.tsv
-    for CHUNK in `seq 1 30`
-    do
-	sed 1d mhcut-dbsnp-clinvar-deletion-2MM-$CHUNK-$TYPE.tsv >> mhcut-dbsnp-clinvar-deletion-2MM-$TYPE.tsv
-    done
-    gzip -f mhcut-dbsnp-clinvar-deletion-2MM-$TYPE.tsv
-done
-
-#
-##
 ### xCas9
 ##
 #
@@ -101,3 +78,35 @@ do
     done
     gzip -f mhcut-dbsnp-clinvar-deletion-xCas9-$TYPE.tsv
 done
+
+
+
+
+#
+##
+### Benchmark
+##
+#
+# 1 vs 2 consecutive mismatches
+# BLAST vs JellyFish
+# Best flank vs both flanks
+#
+
+## Prepare BLAST
+sbatch makeblastdbJob.sh
+
+## Randomly select 100K variants
+head -1 dbsnp-clinvar-deletion.tsv > dbsnp-clinvar-deletion-100KforBenchmark.tsv
+shuf -n 100000 dbsnp-clinvar-deletion.tsv >> dbsnp-clinvar-deletion-100KforBenchmark.tsv
+
+## Default values: 1 cons MM, JellyFish, best flank
+sbatch -J mhcut-bmrk-default -o mhcut-bmrk-default.out -e mhcut-bmrk-default.out benchmark-default-job.sh
+
+## 2 cons MM
+sbatch -J mhcut-bmrk-2cmm -o mhcut-bmrk-2cmm.out -e mhcut-bmrk-2cmm.out benchmark-2cmm-job.sh
+
+## BLAST
+sbatch -J mhcut-bmrk-blast -o mhcut-bmrk-blast.out -e mhcut-bmrk-blast.out benchmark-blast-job.sh
+
+## Both flank
+sbatch -J mhcut-bmrk-2fls -o mhcut-bmrk-2fls.out -e mhcut-bmrk-2fls.out benchmark-2fls-job.sh
