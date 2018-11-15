@@ -27,7 +27,7 @@ class TestFaidx(unittest.TestCase):
         # dump = open('/dev/null')
         cmd_out = subprocess.check_output(cmd)
         # dump.close()
-        self.assertTrue('Done' in cmd_out)
+        self.assertTrue('Indexing completed' in cmd_out)
         self.assertTrue(os.path.isfile('temp.fa.fai'))
 
     def tearDown(self):
