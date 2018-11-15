@@ -140,8 +140,18 @@ class PAMs():
         in the genome aligning perfectly.
         '''
         for pam in self.pams:
+            # Handle NAs (e.g. when using JellyFish)
+            if pam.mm1 == 'NA':
+                mm1 = 0
+            else:
+                mm1 = pam.mm1
+            if pam.mm2 == 'NA':
+                mm2 = 0
+            else:
+                mm2 = pam.mm2
+            # Test if unique
             if(pam.mm0 > 0 and pam.mm0 <= max_mm0 and
-               pam.mm1 <= max_mm1 and pam.mm2 <= max_mm2):
+               mm1 <= max_mm1 and mm2 <= max_mm2):
                 pam.uniq = True
 
     def alignPamsBlast(self, reffile, include_pam=True, prefix='blast',
