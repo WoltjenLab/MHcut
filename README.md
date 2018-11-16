@@ -254,7 +254,7 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 	- Benchmark: 1 cons vs 2 cons; best flanks vs two flanks, blast vs jellyfish.
 
 - Before submitting:
-    - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and portal.
+    - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and [portal](http://crispr-browser.vhost38.genap.ca/).
     - Transfer repo to Woltjen lab repo.
 	- Update READMEs with new repo path.
 	- Setup Dockerhub.
