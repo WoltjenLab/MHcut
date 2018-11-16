@@ -195,11 +195,13 @@ class PAMs():
                 line = line.split('\t')
                 if len(line) > 1:
                     pam_cand = pams_hash[line[0]]
-                    # If that the blast hit covers the full sequence
+                    # If that the blast hit is as long as the full sequence
+                    # and has no gap.
                     protoguide_length = len(pam_cand.proto)
                     if include_pam:
                         protoguide_length += len(pam_cand.pamseq)
-                    if int(line[3]) == protoguide_length:
+                    if(int(line[3]) == protoguide_length and
+                       int(line[5]) == 0):
                         # Update appropriate mismatch count
                         if int(line[4]) == 0:
                             pam_cand.mm0 += 1
