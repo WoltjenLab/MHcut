@@ -22,6 +22,7 @@ These files are rendered into reports (`.md` files).
 
 ### Benchmark
 
+- [Benchmark summary on 100K variants: Jellyfish vs BLAST, 1 vs 2 mismatches, best vs both flanks](benchmark-summary.md)
 - [Allowing for 1 vs 2 consecutive mismatches in the MH.](1mismatchVs2mismatches.md).
 - [What do we gain if we consider both flanking configuration instead of picking the one with best MH?](compare-1flank-2flanks-modes.md).
 - [First (quick) try analyzing a subset of dbSNP](dbSNPcodingSmallDel.md).
