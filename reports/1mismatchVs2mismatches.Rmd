@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, tid
 MHcut was run twice: allowing for maximum one consecutive mismatch and allowing for 2.
 Here both output are compared to quantify how much we gain/lose.
 
+A quick summary in [benchmark-summary.md](benchmark-summary.md) shows the effect on the number of variants for a few selection criteria.
+
 ```{r load}
 ## For data manipulation
 library(data.table)
@@ -35,8 +37,10 @@ We load the coordinate column, rs ID and the MH columns that we want to compare 
 
 ```{r}
 ## read.table('../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', nrows=1)
-var1 = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', select=c(1:4,20:23,25))
-var2 = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-2MM-variants.tsv.gz', select=c(1:4,20:23,25))
+var1 = fread('../scripts-dbSNP-ClinVar/dbsnp-clinvar-deletion-100KforBenchmark-1CMM-jellyfish-bestFl-variants.tsv',
+             select=c(1:4,20:23,25))
+var2 = fread('../scripts-dbSNP-ClinVar/dbsnp-clinvar-deletion-100KforBenchmark-2CMM-jellyfish-bestFl-variants.tsv',
+             select=c(1:4,20:23,25))
 ```
 
 We then merge the two output by coordinate and rs ID. 
@@ -64,14 +68,12 @@ There are `r nrow(var.m1)` variants with different *mh1L*. Hum...
 
 My only guess is that the selection of the *best* flanks was different.
 Allowing for 2 consecutive mismatches produced sometimes a longer MH for the alternative flank pair which was then selected, leading to different MH metrics.
-Now I regret not having a column which record which flanks were used (outer-inner or inner-outer).
-
 Maybe I can recompute the score that was used to chose the best flank.
 If the score in the 2-mismatches run is always higher, then it fits with the explanation.
 The score gives a weight of 2 for the first stretch of exact match and 1 to other matches.
 
 ```{r}
-var.m1 %>% mutate(score=mh1L + hom*mhL, score.2=mh1L.2 + hom.2*mhL.2) %>% ggplot(aes(x=score, y=score.2)) + geom_point(alpha=.4) + theme_bw() + geom_abline()
+var.m1 %>% mutate(score=mh1L + hom*mhL, score.2=mh1L.2 + hom.2*mhL.2) %>% kable
 ```
 
 That fits with the *flank selection* explanation.
@@ -83,13 +85,12 @@ That fits with the *flank selection* explanation.
 mean(var$mhL.2 > var$mhL)
 ```
 
-Around 2.2% of the variants have a longer MH when allowing for 2 mismatches.
+Around `r round(mean(var$mhL.2 > var$mhL),3)*100`% of the variants have a longer MH when allowing for 2 mismatches.
 
 Graphs with a random subset of the data:
 
 ```{r}
 var.ss = var[sample.int(nrow(var), 1e5),]
-ggplot(var.ss, aes(x=winsor(mhL, 20), y=winsor(mhL.2, 20))) + geom_bin2d(binwidth=c(1,1)) + theme_bw()
 ggplot(var.ss, aes(x=mhL.2-mhL)) + geom_histogram() + theme_bw()
 var.ss %>% filter(mhL!=mhL.2) %>% ggplot(aes(x=mhL.2-mhL)) + geom_histogram() + theme_bw() + ggtitle('Variants with same mhL removed')
 ```
@@ -101,7 +102,7 @@ sum(var$mhL.2 < var$mhL)
 var[mhL.2<mhL,]
 ```
 
-Just a few and most likely because of the *flank selection*.
+Most likely because of the *flank selection*.
 
 ## Shorter mhDist?
 
@@ -110,7 +111,6 @@ If the MH length is longer, the distance between MH should be smaller.
 Graphs with a random subset of the data:
 
 ```{r}
-ggplot(var.ss, aes(x=mhDist, y=mhDist.2)) + geom_bin2d() + theme_bw() + geom_abline()
 ggplot(var.ss, aes(x=mhDist.2-mhDist)) + geom_histogram() + theme_bw()
 var.ss %>% filter(mhL!=mhL.2) %>% ggplot(aes(x=mhDist.2-mhDist)) + geom_histogram() + theme_bw() + ggtitle('Variants with same mhL removed')
 ```
@@ -123,24 +123,8 @@ As expected most of the variants that were further extended have a shorter dista
 Graphs with a random subset of the data:
 
 ```{r}
-ggplot(var.ss, aes(x=hom, y=hom.2)) + geom_bin2d() + theme_bw() + geom_abline()
 ggplot(var.ss, aes(x=hom.2-hom)) + geom_histogram() + theme_bw()
 var.ss %>% filter(mhL!=mhL.2) %>% ggplot(aes(x=hom.2-hom)) + geom_histogram() + theme_bw() + ggtitle('Variants with same mhL removed')
 ```
 
 As expected most of the variants that were further extended have a lower homology.
-
-
-## Effect on a typical filtering example
-
-Let's say we want variants with a MH starting with at least 3 exact matches (**mh1L>2**) and a maximum MHdist of 5 (**mhDist<6**).
-How many variants do we "gain" by allowing 2 mismatches in the MH?
-
-```{r}
-nb1 = nrow(var[mh1L>2 & mhDist<6,])
-nb2 = nrow(var[mh1L.2>2 & mhDist.2<6,])
-nb2-nb1
-nb2/nb1
-```
-
-We get `r nb2-nb1` more variants, a `r round((nb2/nb1-1)*100, 2)`% increase.
