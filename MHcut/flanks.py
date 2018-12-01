@@ -26,10 +26,12 @@ class VarFlank():
         self.mhL = 0
         self.hom = 0
         self.nbMM = 0
+        self.mhMaxCons = 0
         self.mh_cartoon = '',
         self.inner_mh_seq = 'NA'
         self.outer_mh_seq = 'NA'
         self.mhdist = 'NA'
+        self.mh1dist = 'NA'
         self.gc = 'NA'
 
     def findMH(self, max_cons_mhh=1):
@@ -50,14 +52,19 @@ class VarFlank():
             # Trim the end of the alignment if X consecutive mismatches
             al_trimmed = al_full
             consMM = 0
+            consM = 0
             for pos in range(len(al_full)-1):
                 if not al_full[pos]:
                     consMM += 1
+                    self.mhMaxCons = max(self.mhMaxCons, consM)
+                    consM = 0
                 else:
+                    consM += 1
                     consMM = 0
                 if consMM > max_cons_mhh:
                     al_trimmed = al_full[:(pos-consMM+1)]
                     break
+            self.mhMaxCons = max(self.mhMaxCons, consM)
             # Cut potential last mismatch
             while(not al_trimmed[-1]):
                 al_trimmed = al_trimmed[:-1]
@@ -74,6 +81,7 @@ class VarFlank():
             self.nbMM = self.mhL - nb_match
             # dist btw homologous sequences
             self.mhdist = len(al_full) - self.mhL
+            self.mh1dist = len(al_full) - self.m1L
             # Compute a score, later used to choose which flank has the best MH
             self.score = self.m1L + nb_match
             # Cartoon of the MH (e.g. ||x|)
@@ -94,7 +102,8 @@ class VarFlank():
         '''The relevant string to write in the "variants" output.'''
         # IF YOU CHANGE SOMETHING HERE, CHANGE THE HEADERS TOO (below)
         tostr = [self.mhL, self.m1L, round(self.hom, 2), self.nbMM,
-                 self.mhdist, self.inner_mh_seq, self.outer_mh_seq, self.gc]
+                 self.mhMaxCons, self.mhdist, self.mh1dist, self.inner_mh_seq,
+                 self.outer_mh_seq, self.gc]
         if flank_info:
             tostr = [self.flank, self.score] + tostr
         tostr = '\t'.join([str(ii) for ii in tostr])
@@ -107,8 +116,8 @@ def headers(flank_info=False):
     "toString" output.
     '''
     # IF YOU CHANGE SOMETHING HERE, CHANGE THE toString TOO (above)
-    headers = ['mhL', 'mh1L', 'hom', 'nbMM', 'mhDist', 'MHseq1', 'MHseq2',
-               'GC']
+    headers = ['mhL', 'mh1L', 'hom', 'nbMM', 'mhMaxCons', 'mhDist', 'mh1Dist',
+               'MHseq1', 'MHseq2', 'GC']
     if flank_info:
         headers = ['flank', 'mhScore'] + headers
     return headers

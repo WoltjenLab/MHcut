@@ -138,8 +138,11 @@ Currently the columns of the output are:
 - *mh1L*: number of first consecutive matches.
 - *hom*: proportion of matches.
 - *nbMM*: number of mismatches.
+- *mhMaxCons*: longest stretch of consecutive matches in the MH.
 - *mhDist*: distance between the end of MH and the variant boundary.
+- *mh1Dist*: distance between the end of the first consecutive matches and the variant boundary.
 - *MHseq1*/*MHseq2*: sequences of the MH.
+- *GC*: the GC content of the MH sequence (maximum of *MHseq1*/*MHseq2*).
 - *pamMot*: the number of PAM motives in a valid location, no matter how unique the protospacer is.
 - *pamUniq*: the number of PAM motives in a valid location and with unique the protospacer.
 - *guidesNoNMH*: the number of guides that have no nested MH.
@@ -155,6 +158,7 @@ Only valid protospacers are returned, i.e. between micro-homologies and unique i
 Currently the columns of the output are the same as for the "variant" file with the following additional columns:
 
 - *protospacer* the sequence of the protospacer.
+- *pamSeq* the PAM.
 - *mm0* the number of position in the genome where the sequence align with no mismatches.
 - *mm1* the number of position in the genome where the sequence align with 1 mismatches.
 - *mm2* the number of position in the genome where the sequence align with 2 mismatches.
