@@ -18,6 +18,6 @@ else
 fi
 
 module load mugqic/jellyfish/2.2.6
-python MHcut.py -var temp-mhcut-$1-$2.tsv -ref hg38.fa -jf mer_counts23.jf -out mhcut-$1-xCas9-$2 -nofilt -minvarL 1 -PAM NGN,GAA,GAT
+MHcut -var temp-mhcut-$1-$2.tsv -ref hg38.fa -jf mer_counts23.jf -out mhcut-$1-xCas9-$2 -nofilt -minvarL 1 -PAM NGN,GAA,GAT
 
 echo "Finish:`date`"

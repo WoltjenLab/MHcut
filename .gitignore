@@ -8,6 +8,7 @@
 *.nin
 *.nsq
 *.txt
+*.out
 .idea
 *.iml
 # Emacs
