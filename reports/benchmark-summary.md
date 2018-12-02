@@ -54,6 +54,32 @@ rbind(blast.sum, jf.sum) %>% kable(format.args=list(big.mark=','))
 
 Very close numbers of variants with unique guides.
 
+What about in term of computation time?
+
+``` r
+out.files = c('../scripts-dbSNP-ClinVar/mhcut-bmrk-default.out',
+              '../scripts-dbSNP-ClinVar/mhcut-bmrk-blast.out')
+times = sapply(out.files, function(out.file){
+    log = scan(out.file, '', sep='\n', quiet=TRUE)
+    start = grep("Start:", log, value=TRUE)
+    start = gsub('Start:(.*:.*:[0-9]*) .*','\\1', start)
+    start <- strptime(start, "%a %b %d %T")
+    finish = grep("Finish:", log, value=TRUE)
+    finish = gsub('Finish:(.*:.*:[0-9]*) .*','\\1', finish)
+    finish <- strptime(finish, "%a %b %d %T")
+    as.double(difftime(finish, start), units='hours')
+})
+times.df = tibble(method=c('Jellyfish', 'BLAST'), time=times)
+kable(times.df, col.names=c('method', 'time (h)'))
+```
+
+| method    |    time (h)|
+|:----------|-----------:|
+| Jellyfish |   0.2427778|
+| BLAST     |  31.6611111|
+
+MHcut is ~130.41 times faster when using Jellyfish compared to using BLAST.
+
 1 mismatch vs 2 mismatches
 ==========================
 
