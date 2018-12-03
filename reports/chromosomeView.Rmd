@@ -31,8 +31,8 @@ winsor <- function(x, u=10){
 We load the coordinate columnd and the MH columns that we want to use for filtering (e.g. mhL and mh1L).
 
 ```{r}
-## read.table('../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', nrows=1)
-var = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', select=c(1:3,21:22, 29))
+## read.table('../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', nrows=1)
+var = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', select=c(1:3,21,22,32))
 setkey(var, chr)
 ```
 
@@ -196,18 +196,18 @@ Only the first column:
 library(chromPlot)
 
 ## (Down)Load band information from UCSC
-if(!file.exists('../data/cytoBandIdeo-hg38.txt.gz')){
-  download.file('http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBandIdeo.txt.gz', '../data/cytoBandIdeo-hg38.txt.gz')
+if(!file.exists('../scripts-dbSNP-ClinVar/cytoBandIdeo-hg38.txt.gz')){
+  download.file('http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBandIdeo.txt.gz', '../scripts-dbSNP-ClinVar/cytoBandIdeo-hg38.txt.gz')
 }
-cyto = read.table('../data/cytoBandIdeo-hg38.txt.gz', sep='\t')
+cyto = read.table('../scripts-dbSNP-ClinVar/cytoBandIdeo-hg38.txt.gz', sep='\t')
 colnames(cyto) = c('Chrom','Start','End','Name','gieStain')
 cyto = subset(cyto, Chrom %in% paste0('chr', c(1:22, 'X','Y')))
 
 ## (Down)Load gap information from UCSC
-if(!file.exists('../data/gap-hg38.txt.gz')){
-  download.file('http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/gap.txt.gz', '../data/gap-hg38.txt.gz')
+if(!file.exists('../scripts-dbSNP-ClinVar/gap-hg38.txt.gz')){
+  download.file('http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/gap.txt.gz', '../scripts-dbSNP-ClinVar/gap-hg38.txt.gz')
 }
-gap = read.table('../data/gap-hg38.txt.gz', sep='\t')
+gap = read.table('../scripts-dbSNP-ClinVar/gap-hg38.txt.gz', sep='\t')
 gap = gap[,c(2:4,8)]
 colnames(gap) = c('Chrom','Start','End','Name')
 gap = subset(gap, Chrom %in% paste0('chr', c(1:22, 'X','Y')))

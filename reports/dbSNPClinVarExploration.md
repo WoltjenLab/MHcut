@@ -8,16 +8,16 @@ There is a *GENEINFO* column that comes from the dbSNP VCF and another one from 
 
 |  prop.same.geneinfo|
 |-------------------:|
-|           0.8838559|
+|           0.8841564|
 
 | GENEINFO                    | GENEINFO.ClinVar      |
 |:----------------------------|:----------------------|
-| PLCH2:9651,PEX10:5192       | PEX10:5192,PLCH2:9651 |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
 | MIR6808:102466740,DVL1:1855 | DVL1:1855             |
-| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
-| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
-| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
-| B3GALT6:126792,SDF4:51150   | B3GALT6:126792        |
+| PLCH2:9651,PEX10:5192       | PEX10:5192,PLCH2:9651 |
 
 The columns are the same only 88% of the time. Often a gene is "missing" in the ClinVar column. Or is it because the ClinVar column only shows the disease-relevant gene?
 
@@ -50,15 +50,15 @@ Do most variants in ClinVar have associated citations? How many non-pathogenic v
 
 | CLNSIG                                          |  nb.var|  prop.wth.citation|
 |:------------------------------------------------|-------:|------------------:|
-| Pathogenic                                      |   10550|          0.5813270|
-| Uncertain\_significance                         |    4812|          0.2711970|
+| Pathogenic                                      |   10548|          0.5812476|
+| Uncertain\_significance                         |    4801|          0.2711935|
 | Likely\_pathogenic                              |    2430|          0.4164609|
-| Likely\_benign                                  |    1932|          0.3048654|
-| Benign                                          |    1340|          0.4000000|
+| Likely\_benign                                  |    1921|          0.3029672|
+| Benign                                          |    1320|          0.3992424|
 | not\_provided                                   |    1225|          0.2318367|
-| Conflicting\_interpretations\_of\_pathogenicity |     455|          0.8131868|
+| Conflicting\_interpretations\_of\_pathogenicity |     452|          0.8141593|
 | Pathogenic/Likely\_pathogenic                   |     436|          0.8853211|
-| Benign/Likely\_benign                           |     266|          0.7857143|
+| Benign/Likely\_benign                           |     261|          0.7816092|
 | -                                               |      50|          0.8200000|
 
 Around 60% of pathogenic variants (the largest class of variants in ClinVar) have at least one associated publication.
@@ -76,14 +76,14 @@ Here are a few doublets:
 
 | chr  |  start|    end| CAF    | TOPMED              | GENEINFO                        | MC  | AF\_EXAC | AF\_TGP |  ALLELEID| CLNSIG | GENEINFO.ClinVar | MC.ClinVar | citation | geneloc    |  varL|  mhL|  mh1L|  nbentry|
 |:-----|------:|------:|:-------|:--------------------|:--------------------------------|:----|:---------|:--------|---------:|:-------|:-----------------|:-----------|:---------|:-----------|-----:|----:|-----:|--------:|
-| chr1 |  13958|  13958| -      | 0.01379332313965341 | DDX11L1:100287102|WASH7P:653635 | INT | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     1|    1|     1|        2|
 | chr1 |  13958|  13958| -      | -                   | DDX11L1:100287102|WASH7P:653635 | INT | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     1|    1|     1|        2|
-| chr1 |  54715|  54724| -      | 0.02604166666666666 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |    10|    9|     1|        2|
+| chr1 |  13958|  13958| -      | 0.01379332313965341 | DDX11L1:100287102|WASH7P:653635 | INT | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     1|    1|     1|        2|
 | chr1 |  54715|  54724| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |    10|    9|     1|        2|
-| chr1 |  54721|  54725| -      | 0.07098146024464831 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |     5|    2|     2|        2|
+| chr1 |  54715|  54724| -      | 0.02604166666666666 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |    10|    9|     1|        2|
 | chr1 |  54721|  54725| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |     5|    2|     2|        2|
-| chr1 |  63736|  63738| 0.3718 | 0.24307944699286442 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     3|    3|     3|        2|
+| chr1 |  54721|  54725| -      | 0.07098146024464831 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intergenic |     5|    2|     2|        2|
 | chr1 |  63736|  63738| 0.3718 | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     3|    3|     3|        2|
+| chr1 |  63736|  63738| 0.3718 | 0.24307944699286442 | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | exonic     |     3|    3|     3|        2|
 | chr1 |  66274|  66275| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intronic   |     2|    1|     1|        2|
 | chr1 |  66274|  66275| -      | -                   | -                               | -   | NA       | NA      |        NA| NA     | NA               | NA         | NA       | intronic   |     2|    1|     1|        2|
 

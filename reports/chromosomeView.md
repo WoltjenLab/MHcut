@@ -22,10 +22,10 @@ winsor <- function(x, u = 10) {
 We load the coordinate columnd and the MH columns that we want to use for filtering (e.g. mhL and mh1L).
 
 ``` r
-## read.table('../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz',
+## read.table('../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz',
 ## nrows=1)
-var = fread("gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz", 
-    select = c(1:3, 21:22, 29))
+var = fread("gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz", 
+    select = c(1:3, 21, 22, 32))
 setkey(var, chr)
 ```
 
@@ -44,7 +44,7 @@ library(GenomicRanges)
 First let's prepare 1 Mbp regions in the human genome.
 
 ``` r
-bin.gr = tileGenome(seqlengths(BSgenome.Hsapiens.UCSC.hg38), tilewidth = 1000000)
+bin.gr = tileGenome(seqlengths(BSgenome.Hsapiens.UCSC.hg38), tilewidth = 1e+06)
 bin.gr = do.call(c, bin.gr)
 ```
 
@@ -70,18 +70,18 @@ head(gr)
 ```
 
     ## GRanges object with 6 ranges and 2 metadata columns:
-    ##       seqnames             ranges strand |    nb.var   nb.var2
-    ##          <Rle>          <IRanges>  <Rle> | <integer> <integer>
-    ##   [1]     chr1 [      1,  999778]      * |      2741       311
-    ##   [2]     chr1 [ 999779, 1999556]      * |      5969      1093
-    ##   [3]     chr1 [1999557, 2999333]      * |      3956       706
-    ##   [4]     chr1 [2999334, 3999111]      * |      4252       942
-    ##   [5]     chr1 [3999112, 4998889]      * |      3916       327
-    ##   [6]     chr1 [4998890, 5998666]      * |      4010       379
+    ##       seqnames          ranges strand |    nb.var   nb.var2
+    ##          <Rle>       <IRanges>  <Rle> | <integer> <integer>
+    ##   [1]     chr1        1-999778      * |      2810       350
+    ##   [2]     chr1  999779-1999556      * |      6146      1774
+    ##   [3]     chr1 1999557-2999333      * |      4030      1025
+    ##   [4]     chr1 2999334-3999111      * |      4318      1370
+    ##   [5]     chr1 3999112-4998889      * |      3991       584
+    ##   [6]     chr1 4998890-5998666      * |      4090       794
     ##   -------
     ##   seqinfo: 455 sequences from an unspecified genome
 
-On average 3479 variants per Mbp for variants with `mh1L>2`, and 3479 variants per Mbp for variants with `mh1L>2` and `pamUniq>0`.
+On average 3567 variants per Mbp for variants with `mh1L>2`, and 3567 variants per Mbp for variants with `mh1L>2` and `pamUniq>0`.
 
 IdeoViz package
 ---------------
@@ -310,20 +310,20 @@ Only the first column:
 library(chromPlot)
 
 ## (Down)Load band information from UCSC
-if (!file.exists("../data/cytoBandIdeo-hg38.txt.gz")) {
+if (!file.exists("../scripts-dbSNP-ClinVar/cytoBandIdeo-hg38.txt.gz")) {
     download.file("http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBandIdeo.txt.gz", 
-        "../data/cytoBandIdeo-hg38.txt.gz")
+        "../scripts-dbSNP-ClinVar/cytoBandIdeo-hg38.txt.gz")
 }
-cyto = read.table("../data/cytoBandIdeo-hg38.txt.gz", sep = "\t")
+cyto = read.table("../scripts-dbSNP-ClinVar/cytoBandIdeo-hg38.txt.gz", sep = "\t")
 colnames(cyto) = c("Chrom", "Start", "End", "Name", "gieStain")
 cyto = subset(cyto, Chrom %in% paste0("chr", c(1:22, "X", "Y")))
 
 ## (Down)Load gap information from UCSC
-if (!file.exists("../data/gap-hg38.txt.gz")) {
+if (!file.exists("../scripts-dbSNP-ClinVar/gap-hg38.txt.gz")) {
     download.file("http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/gap.txt.gz", 
-        "../data/gap-hg38.txt.gz")
+        "../scripts-dbSNP-ClinVar/gap-hg38.txt.gz")
 }
-gap = read.table("../data/gap-hg38.txt.gz", sep = "\t")
+gap = read.table("../scripts-dbSNP-ClinVar/gap-hg38.txt.gz", sep = "\t")
 gap = gap[, c(2:4, 8)]
 colnames(gap) = c("Chrom", "Start", "End", "Name")
 gap = subset(gap, Chrom %in% paste0("chr", c(1:22, "X", "Y")))

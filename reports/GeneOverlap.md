@@ -16,10 +16,11 @@ library(magrittr)  # pipes (e.g. %>%)
 library(knitr)
 
 ## Read the first row (headers) to remind us the order of each column
-var = read.table("../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz", nrows = 1)
+var = read.table("../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz", 
+    nrows = 1)
 ## Import variants coordinates and colums mh1L, GENEINFO and geneloc (fread
 ## is data.table command)
-var = fread("gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz", 
+var = fread("gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz", 
     select = c(1:3, 7, 19, 22))
 head(var)
 ```
@@ -88,11 +89,12 @@ GENEINFO might be useful to quickly look for genes in the large dataset, but to 
 First, download Gencode v28 (if not already there) and import it.
 
 ``` r
-if (!file.exists("../data/gencode.v28.annotation.gtf.gz")) {
+if (!file.exists("../scripts-dbSNP-ClinVar/gencode.v28.annotation.gtf.gz")) {
     download.file("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz", 
-        "../data/gencode.v28.annotation.gtf.gz")
+        "../scripts-dbSNP-ClinVar/gencode.v28.annotation.gtf.gz")
 }
-genc = read.table("../data/gencode.v28.annotation.gtf.gz", as.is = TRUE, sep = "\t")
+genc = read.table("../scripts-dbSNP-ClinVar/gencode.v28.annotation.gtf.gz", 
+    as.is = TRUE, sep = "\t")
 colnames(genc) = c("chr", "source", "type", "start", "end", "score", "strand", 
     "phase", "attributes")
 genc %>% head(1) %>% kable

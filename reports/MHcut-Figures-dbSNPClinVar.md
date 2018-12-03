@@ -25,22 +25,22 @@ Then we'll read the input TSV file (with 43M variants) using the `fread` functio
 
 ``` r
 ## Read the first row (headers) to remind us the order of each column
-read.table('../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', nrows=1)
+read.table('../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz', nrows=1)
 ```
 
     ##    V1    V2  V3 V4  V5     V6       V7 V8 V9     V10    V11      V12   V13
     ## 1 chr start end RS CAF TOPMED GENEINFO PM MC AF_EXAC AF_TGP ALLELEID CLNDN
     ##      V14     V15              V16        V17      V18     V19  V20 V21
     ## 1 CLNSIG DBVARID GENEINFO.ClinVar MC.ClinVar citation geneloc varL mhL
-    ##    V22 V23  V24    V25    V26    V27 V28    V29     V30         V31
-    ## 1 mh1L hom nbMM mhDist MHseq1 MHseq2  GC pamMot pamUniq guidesNoNMH
-    ##            V32          V33
-    ## 1 guidesMinNMH max2cutsDist
+    ##    V22 V23  V24       V25    V26     V27    V28    V29 V30    V31     V32
+    ## 1 mh1L hom nbMM mhMaxCons mhDist mh1Dist MHseq1 MHseq2  GC pamMot pamUniq
+    ##           V33          V34          V35
+    ## 1 guidesNoNMH guidesMinNMH max2cutsDist
 
 ``` r
-## Import variants and colums varL, mhL, mh1L, mhDist
-var = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz',
-            select=c(20:22,25,29:30))
+## Import variants and colums varL, mhL, mh1L, pamMot and pamUniq
+var = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-variants.tsv.gz',
+            select=c(20:22,31,32))
 ```
 
 This takes about 1 min. Now the `var` object is a *data.table* with 43M values. Before feeding this to ggplot2, the most efficient is to compute the summary statistics using the `data.table` functions, then convert to *data.frame* and call ggplot.
@@ -154,8 +154,9 @@ nb.mh3.pam.uniq = nrow(var[mhL>=3 & pamMot>0 & pamUniq>0])
 For the last number we should look into the guides to make sure that we count guides that are both unique and with no nested MH.
 
 ``` r
-guides = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-guides.tsv.gz',
-               sel=c(1:4,21,29,30,43))
+## Import guides: columns chr/start/end/RS, mhL, pamMot, pamUniq and nbNMH
+guides = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-guides.tsv.gz',
+               select=c(1:4,21,31,32,45))
 nb.mh3.pam.uniq.nonmh = nrow(unique(guides[mhL>=3 & pamMot>0 & pamUniq>0 & nbNMH==0,
                                            .(chr, start, end, RS)]))
 ```
@@ -174,10 +175,10 @@ kable(ngg.sum, format.args=list(big.mark=','))
 Now let's do the same for the xCas9 run. Because of the more flexible PAM we expect more "targetable" deletions.
 
 ``` r
-var.x = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-xCas9-variants.tsv.gz',
-              sel=c(20:22,25,29:30))
-guides.x = fread('gunzip -c ../data/mhcut-dbsnp-clinvar-deletion-xCas9-guides.tsv.gz',
-                 sel=c(1:4,21,29,30,43))
+var.x = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-xCas9-variants.tsv.gz',
+              select=c(20:22,31,32))
+guides.x = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-xCas9-guides.tsv.gz',
+                 sel=c(1:4,21,31,32,45))
 
 xcas9.sum = tibble(cas9='xCas9',
                    nb.mh3 = nrow(var.x[mhL>=3]),
