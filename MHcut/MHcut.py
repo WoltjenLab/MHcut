@@ -88,23 +88,41 @@ def mhcut(args):
             continue
         # Create a variant object with the reference sequence
         var = variant.Variant(input_line[0], vstart, vend, reffa)
-
-        # Test MH in flank configuration 1
-        var_fl_1 = flanks.VarFlank(var, flank=1)
-        var_fl_1.findMH(args.maxConsMM)
-        # If no MH or too small, or too low MH ratio or
-        # too short first microhomology stretch
-        if(not args.nofilter
-           and (var_fl_1.mhL < args.minMHL or var_fl_1.hom < args.minhom or
-                var_fl_1.m1L < args.minm1L)):
-            var_fl_1.score = 0
-        # Test MH in flank configuration 1
-        var_fl_2 = flanks.VarFlank(var, flank=2)
-        var_fl_2.findMH(args.maxConsMM)
-        if(not args.nofilter
-           and (var_fl_2.mhL < args.minMHL or var_fl_2.hom < args.minhom or
-                var_fl_2.m1L < args.minm1L)):
-            var_fl_2.score = 0
+        if args.no_opt_shift:
+            vars = [var]
+        else:
+            # List variant when shifting represent the same deletion
+            vars = variant.list_shifted_variants(var)
+        # To record which shifted variant has the best score
+        var = vars[0]
+        var_opt_score = -1
+        var_fl_1 = var_fl_2 = False
+        for var_c in vars:
+            # Test MH in flank configuration 1
+            var_fl_c_1 = flanks.VarFlank(var_c, flank=1)
+            var_fl_c_1.findMH(args.maxConsMM)
+            # If no MH or too small, or too low MH ratio or
+            # too short first microhomology stretch
+            if(not args.nofilter
+               and (var_fl_c_1.mhL < args.minMHL or
+                    var_fl_c_1.hom < args.minhom or
+                    var_fl_c_1.m1L < args.minm1L)):
+                var_fl_c_1.score = 0
+            # Test MH in flank configuration 1
+            var_fl_c_2 = flanks.VarFlank(var_c, flank=2)
+            var_fl_c_2.findMH(args.maxConsMM)
+            if(not args.nofilter
+               and (var_fl_c_2.mhL < args.minMHL or
+                    var_fl_c_2.hom < args.minhom or
+                    var_fl_c_2.m1L < args.minm1L)):
+                var_fl_c_2.score = 0
+            # Test if better than previous variants, save if so
+            if var_fl_c_2.score > var_opt_score or \
+               var_fl_c_1.score > var_opt_score:
+                var = var_c
+                var_fl_1 = var_fl_c_1
+                var_fl_2 = var_fl_c_2
+                var_opt_score = max(var_fl_c_1.score, var_fl_c_2.score)
 
         if args.twofls:
             # Two-flanks mode, i.e. both flank configurations are tested

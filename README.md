@@ -16,6 +16,16 @@ The MH can be chosen from 2 flanks. MHcut uses a score to choose the "best" flan
 The score is currently the number of matches + number of consecutive first matches.
 In the example above, *Flank 1* is chosen (score: 9 vs 8).
 
+### Shifting deletion
+
+Sometimes the same deletion can be represented by different coordinates. 
+For this reason, MHcut will try to shift the deletion when possible and pick the coordinates that result in the highest micro-homology.
+
+For example, in the previous example, the following representation has a better homology and represent the exact same deletion:
+
+                    |||||||        |||||||
+	AGTGCCGTTAATCAGAGGTCGGG-CTGTGATGGTCGGG-GTGTTGTCGTTGACGTC
+
 ## PAM cut search
 
                          |||x|||        |||x|||
@@ -113,17 +123,22 @@ The required parameters are:
 
 Other optional parameters:
 
+- *-jf* the 23-mers count file created by JellyFish. If provided, JellyFish will be used to test protospacer uniqueness instead of BLAST.
 - *-minvarL* the minimum length for a variant to be considered. Default is `3`.
 - *-minMHL* the minimum length of the MH. Default is `3`.
-- *-maxConsMM*. The maximum number of consecutive mismatches allowed when extending the MH. Default is `1`.
+- *-minm1L* the minimum length of the first stretch if the microhomology. Default is `3`.
+- *-nofilt* don't filter variants without MH. all input variants will be present in the output *-variants* file. If used, the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L.
+- *-maxConsMM* the maximum number of consecutive mismatches allowed when extending the MH. Default is `1`.
 - *-maxTail* the maximum distance betweem the MHs and a PAM cut to be considered valid. Currently default at `50`. Relevant for large variants.
 - *-minhom* the minimum ratio of homology in the whole microhomology. Default is `0`.
-- *-minm1L* the minimum length of the first stretch if the microhomology. Default is `3`.
-- *-PAM* the PAM sequence. Default is `NGG`.
+- *-PAM* the PAM sequence. Default is `NGG`. Possibly several separated by ",".
 - *-PAMcut* the cut position relative to the PAM motif. Default is `-3`
-- *-minMHLnested* the minimum length of nested MH to be considered in the nested MH check. Default is `3`.
-- *-nofilt* Don't filter variants without MH. all input variants will be present in the output *-variants* file. If used, the following parameters will NOT be taken into account: -minMHL, -minhom, -minm1L.
-- *-jf* The 23-mers count file created by JellyFish. If provided, JellyFish will be used to test protospacer uniqueness instead of BLAST.
+- *-minLnhm* the minimum length of nested MH to be considered in the nested MH check. Default is `3`.
+- *-2fls* report results for both flank configurations instead of the one with strongest MH.
+- *-noShift* use input coordinates without trying to shift the variant to find the best MH.
+- *-chunkS* if using BLAST, the number of PAMs per chunks. Default: 30. Pick lower value if BLAST uses too much memory.
+
+
 
 ## Output
 
@@ -255,7 +270,7 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
     - How to use a different PAM.
 	- How was the dbSNP/ClinVar analysis for the paper ran.
 	- How to filter the guides for specific 2-cuts filtering.
-	- Benchmark: 1 cons vs 2 cons; best flanks vs two flanks, blast vs jellyfish.
+	- How to filter the guides to select cuts inside/outside the MH.
 
 - Before submitting:
     - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and [portal](http://crispr-browser.vhost38.genap.ca/).
