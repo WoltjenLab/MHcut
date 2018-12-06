@@ -3,10 +3,10 @@ curl ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/All_20180
 sbatch prepareDBSNP.sh
 
 ## Download ClinVar and select relevant information
-wget ftp://ftp.ncbi.nih.gov/pub/clinvar/vcf_GRCh38/clinvar_20180701.vcf.gz
-python prepareVcfIndel.py -vcf clinvar_20180701.vcf.gz -o clinvar_20180701.tsv -info "AF_EXAC|0,AF_TGP|0,ALLELEID|0,CLNDN|-,CLNSIG|-,CLNVC|0,DBVARID|-,GENEINFO|1,MC|-,RS|0" -addchr
-wget -O var_citations_17July2018.txt ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/var_citations.txt
-python prepareClinVar.py -tsv clinvar_20180701.tsv -cit var_citations_17July2018.txt -o clinvar-grch38-deletion_20180701.tsv
+wget ftp://ftp.ncbi.nih.gov/pub/clinvar/vcf_GRCh38/clinvar_20181028.vcf.gz
+python prepareVcfIndel.py -vcf clinvar_20181028.vcf.gz -o clinvar_20181028.tsv -info "AF_EXAC|0,AF_TGP|0,ALLELEID|0,CLNDN|-,CLNSIG|-,CLNVC|0,DBVARID|-,GENEINFO|1,MC|-,RS|0" -addchr
+wget -O var_citations_4Dec2018.txt ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/var_citations.txt
+python prepareClinVar.py -tsv clinvar_20181028.tsv -cit var_citations_4Dec2018.txt -o clinvar-grch38-deletion_20181028.tsv
 
 ## Merge ClinVar and dbSNP, and annotate with gencode
 wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_28/gencode.v28.annotation.gtf.gz

@@ -8,4 +8,4 @@
 #SBATCH --account=rrg-bourqueg-ad
 
 module load mugqic/R_Bioconductor
-Rscript mergeClinVarDbSNPGencode.R clinvar-grch38-deletion_20180701.tsv dbsnp-del.tsv gencode.v28.annotation.gtf.gz dbsnp-clinvar-deletion.tsv
+Rscript mergeClinVarDbSNPGencode.R clinvar-grch38-deletion_20181028.tsv dbsnp-del.tsv gencode.v28.annotation.gtf.gz dbsnp-clinvar-deletion.tsv

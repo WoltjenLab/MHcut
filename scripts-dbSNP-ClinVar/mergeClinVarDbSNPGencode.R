@@ -17,8 +17,10 @@ message('Reading the Gencode file...')
 genc = read.table(GENCFILE, as.is=TRUE, sep='\t')
 colnames(genc) = c('chr','source','type','start','end','score', 'strand', 'phase', 'attributes')
 suppressMessages(library(GenomicRanges))
+genc$genetype = gsub('.*gene_type ([^;]*);.*', '\\1', genc$attributes)
+genc = subset(genc, genetype=='protein_coding')
 gene.gr = makeGRangesFromDataFrame(subset(genc, type=='gene'))
-exon.gr = makeGRangesFromDataFrame(subset(genc, type=='exon'))
+exon.gr = makeGRangesFromDataFrame(subset(genc, type=='CDS'))
 utr.gr = makeGRangesFromDataFrame(subset(genc, type=='UTR'))
 
 ## Read dbSNP file by chunks
