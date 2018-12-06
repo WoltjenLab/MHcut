@@ -97,11 +97,13 @@ genc$genetype = gsub('.*gene_type ([^;]*);.*', '\\1', genc$attributes)
 genc$genename = gsub('.*gene_name ([^;]*);.*', '\\1', genc$attributes)
 ```
 
+### Coding sequence of protein-coding genes
+
 Now let's create a GRanges object with the exons of *protein_coding* genes, keeping the columns (to keep the gene names that we'll need later).
 
 ```{r exons}
 library(GenomicRanges)
-exons.gr = genc %>% filter(type=='exon', genetype=='protein_coding') %>%
+exons.gr = genc %>% filter(type=='CDS', genetype=='protein_coding') %>%
     makeGRangesFromDataFrame(keep.extra.columns=TRUE)
 length(unique(exons.gr$genename))
 ```
@@ -115,4 +117,26 @@ exons3ex.gr = subsetByOverlaps(exons.gr, var3ex.gr)
 length(unique(exons3ex.gr$genename))
 ```
 
-`r length(unique(exons3ex.gr$genename))` genes have a variant in exonic region.
+`r length(unique(exons3ex.gr$genename))` genes have a variant overlapping coding sequence.
+
+
+### Micro RNA
+
+Now let's have a look at miRNAs.
+
+```{r mirna}
+mirna.gr = genc %>% filter(genetype=='miRNA') %>%
+    makeGRangesFromDataFrame(keep.extra.columns=TRUE)
+length(unique(mirna.gr$genename))
+```
+
+We have coordinates for `r length(unique(mirna.gr$genename))` miRNAs.
+We can now filter these miRNAs to keep only the ones overlapping the variants we selected previously.
+
+```{r mirnaol}
+var3ex.gr = makeGRangesFromDataFrame(var3ex)
+mirna3ex.gr = subsetByOverlaps(mirna.gr, var3ex.gr)
+length(unique(mirna3ex.gr$genename))
+```
+
+`r length(unique(mirna3ex.gr$genename))` genes have a variant overlapping their sequence.

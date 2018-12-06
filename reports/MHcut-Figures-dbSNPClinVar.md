@@ -56,18 +56,18 @@ head(varmh)
 ```
 
     ##    varL mhL       N
-    ## 1:    6   6  609758
-    ## 2:    5   4  323425
-    ## 3:    1   0 6241188
-    ## 4:   19  19   13646
-    ## 5:    5   0  309849
-    ## 6:   13  13   69665
+    ## 1:    6   6  690898
+    ## 2:    5   5  905492
+    ## 3:    1   0 6241781
+    ## 4:   19  19   18580
+    ## 5:    5   0  309866
+    ## 6:   13  13   85233
 
 ``` r
 nrow(varmh)
 ```
 
-    ## [1] 3072
+    ## [1] 3112
 
 This is now just ~3,000 values so we can convert to *data.frame* and use dplyr/ggplot to make the graph.
 
@@ -88,12 +88,12 @@ head(bar.df)
     ## # Groups:   varL [3]
     ##    varL mhL.class        N
     ##   <dbl> <fct>        <int>
-    ## 1     1 0          6241188
-    ## 2     1 1         10824944
-    ## 3     2 0          1723247
-    ## 4     2 1          1774571
-    ## 5     2 2          3674728
-    ## 6     3 0           714709
+    ## 1     1 0          6241781
+    ## 2     1 1         10825813
+    ## 3     2 0          1723369
+    ## 4     2 1          1774495
+    ## 5     2 2          3675140
+    ## 6     3 0           714759
 
 ``` r
 ## Bar plot using ggplot2
@@ -114,7 +114,7 @@ Just a safety check, are we really looking at ~43M variants?
 sum(varmh.df$N)
 ```
 
-    ## [1] 43567343
+    ## [1] 43570598
 
 Yep.
 
@@ -141,14 +141,17 @@ Table for different filtering criteria
 We want to know how many variants have:
 
 1.  MH length &gt;= 3, `mhL>=3`.
-2.  an available PAM, `pamMot>0`.
-3.  with a unique protospacer, `pamUniq>0`.
+2.  at least one available PAM, `pamMot>0`.
+3.  at least one unique protospacer, `pamUniq>0`.
 4.  and with no nested MH, `nbNMH==0` in the guide file.
+
+We can also add a column with the number of protospacer with unique protospacer.
 
 ``` r
 nb.mh3 = nrow(var[mhL>=3])
 nb.mh3.pam = nrow(var[mhL>=3 & pamMot>0])
 nb.mh3.pam.uniq = nrow(var[mhL>=3 & pamMot>0 & pamUniq>0])
+nb.mh3.pam.uniq.guides = sum(var[mhL>=3 & pamMot>0]$pamUniq)
 ```
 
 For the last number we should look into the guides to make sure that we count guides that are both unique and with no nested MH.
@@ -164,13 +167,13 @@ nb.mh3.pam.uniq.nonmh = nrow(unique(guides[mhL>=3 & pamMot>0 & pamUniq>0 & nbNMH
 Formatted as a table:
 
 ``` r
-ngg.sum = tibble(cas9='NGG', nb.mh3, nb.mh3.pam, nb.mh3.pam.uniq, nb.mh3.pam.uniq.nonmh)
+ngg.sum = tibble(cas9='NGG', nb.mh3, nb.mh3.pam, nb.mh3.pam.uniq, nb.mh3.pam.uniq.nonmh, nb.mh3.pam.uniq.guides)
 kable(ngg.sum, format.args=list(big.mark=','))
 ```
 
-| cas9 |      nb.mh3|  nb.mh3.pam|  nb.mh3.pam.uniq|  nb.mh3.pam.uniq.nonmh|
-|:-----|-----------:|-----------:|----------------:|----------------------:|
-| NGG  |  13,166,790|   2,386,722|        1,425,346|                780,609|
+| cas9 |      nb.mh3|  nb.mh3.pam|  nb.mh3.pam.uniq|  nb.mh3.pam.uniq.nonmh|  nb.mh3.pam.uniq.guides|
+|:-----|-----------:|-----------:|----------------:|----------------------:|-----------------------:|
+| NGG  |  14,053,801|   2,671,916|        1,624,679|                908,708|               3,287,892|
 
 Now let's do the same for the xCas9 run. Because of the more flexible PAM we expect more "targetable" deletions.
 
@@ -186,12 +189,13 @@ xcas9.sum = tibble(cas9='xCas9',
                    nb.mh3.pam.uniq = nrow(var.x[mhL>=3 & pamMot>0 & pamUniq>0]),
                    nb.mh3.pam.uniq.nonmh = nrow(unique(guides.x[mhL>=3 & pamMot>0 &
                                                                 pamUniq>0 & nbNMH==0,
-                                                                .(chr, start, end, RS)])))
+                                                                .(chr, start, end, RS)])),
+                   nb.mh3.pam.uniq.guides=sum(var.x[mhL>=3 & pamMot>0]$pamUniq))
 
 rbind(ngg.sum, xcas9.sum) %>% kable(format.args=list(big.mark=','))
 ```
 
-| cas9  |      nb.mh3|  nb.mh3.pam|  nb.mh3.pam.uniq|  nb.mh3.pam.uniq.nonmh|
-|:------|-----------:|-----------:|----------------:|----------------------:|
-| NGG   |  13,166,790|   2,386,722|        1,425,346|                780,609|
-| xCas9 |  13,166,790|   8,964,375|        4,601,939|              3,360,482|
+| cas9  |      nb.mh3|  nb.mh3.pam|  nb.mh3.pam.uniq|  nb.mh3.pam.uniq.nonmh|  nb.mh3.pam.uniq.guides|
+|:------|-----------:|-----------:|----------------:|----------------------:|-----------------------:|
+| NGG   |  14,053,801|   2,671,916|        1,624,679|                908,708|               3,287,892|
+| xCas9 |  14,053,801|   9,714,620|        5,160,652|              3,824,551|              14,880,555|

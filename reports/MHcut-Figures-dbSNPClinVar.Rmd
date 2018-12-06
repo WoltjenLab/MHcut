@@ -110,15 +110,18 @@ varmh %>% as.data.frame %>% mutate(mhL.class=cut(mhL,
 We want to know how many variants have:
 
 1. MH length >= 3, `mhL>=3`.
-1. an available PAM, `pamMot>0`.
-1. with a unique protospacer, `pamUniq>0`.
+1. at least one available PAM, `pamMot>0`.
+1. at least one unique protospacer, `pamUniq>0`.
 1. and with no nested MH, `nbNMH==0` in the guide file.
+
+We can also add a column with the number of protospacer with unique protospacer.
 
 
 ```{r}
 nb.mh3 = nrow(var[mhL>=3])
 nb.mh3.pam = nrow(var[mhL>=3 & pamMot>0])
 nb.mh3.pam.uniq = nrow(var[mhL>=3 & pamMot>0 & pamUniq>0])
+nb.mh3.pam.uniq.guides = sum(var[mhL>=3 & pamMot>0]$pamUniq)
 ```
 
 For the last number we should look into the guides to make sure that we count guides that are both unique and with no nested MH.
@@ -134,7 +137,7 @@ nb.mh3.pam.uniq.nonmh = nrow(unique(guides[mhL>=3 & pamMot>0 & pamUniq>0 & nbNMH
 Formatted as a table:
 
 ```{r}
-ngg.sum = tibble(cas9='NGG', nb.mh3, nb.mh3.pam, nb.mh3.pam.uniq, nb.mh3.pam.uniq.nonmh)
+ngg.sum = tibble(cas9='NGG', nb.mh3, nb.mh3.pam, nb.mh3.pam.uniq, nb.mh3.pam.uniq.nonmh, nb.mh3.pam.uniq.guides)
 kable(ngg.sum, format.args=list(big.mark=','))
 ```
 
@@ -153,7 +156,8 @@ xcas9.sum = tibble(cas9='xCas9',
                    nb.mh3.pam.uniq = nrow(var.x[mhL>=3 & pamMot>0 & pamUniq>0]),
                    nb.mh3.pam.uniq.nonmh = nrow(unique(guides.x[mhL>=3 & pamMot>0 &
                                                                 pamUniq>0 & nbNMH==0,
-                                                                .(chr, start, end, RS)])))
+                                                                .(chr, start, end, RS)])),
+                   nb.mh3.pam.uniq.guides=sum(var.x[mhL>=3 & pamMot>0]$pamUniq))
 
 rbind(ngg.sum, xcas9.sum) %>% kable(format.args=list(big.mark=','))
 ```

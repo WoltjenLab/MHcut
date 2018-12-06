@@ -72,16 +72,16 @@ head(gr)
     ## GRanges object with 6 ranges and 2 metadata columns:
     ##       seqnames          ranges strand |    nb.var   nb.var2
     ##          <Rle>       <IRanges>  <Rle> | <integer> <integer>
-    ##   [1]     chr1        1-999778      * |      2810       350
-    ##   [2]     chr1  999779-1999556      * |      6146      1774
-    ##   [3]     chr1 1999557-2999333      * |      4030      1025
-    ##   [4]     chr1 2999334-3999111      * |      4318      1370
-    ##   [5]     chr1 3999112-4998889      * |      3991       584
-    ##   [6]     chr1 4998890-5998666      * |      4090       794
+    ##   [1]     chr1        1-999778      * |      2810       351
+    ##   [2]     chr1  999779-1999556      * |      6148      1765
+    ##   [3]     chr1 1999557-2999333      * |      4030      1022
+    ##   [4]     chr1 2999334-3999111      * |      4319      1368
+    ##   [5]     chr1 3999112-4998889      * |      3992       587
+    ##   [6]     chr1 4998890-5998666      * |      4092       796
     ##   -------
     ##   seqinfo: 455 sequences from an unspecified genome
 
-On average 3567 variants per Mbp for variants with `mh1L>2`, and 3567 variants per Mbp for variants with `mh1L>2` and `pamUniq>0`.
+On average 3568 variants per Mbp for variants with `mh1L>2`, and 3568 variants per Mbp for variants with `mh1L>2` and `pamUniq>0`.
 
 IdeoViz package
 ---------------

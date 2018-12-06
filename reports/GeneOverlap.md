@@ -39,7 +39,7 @@ head(var)
 unique(var$geneloc)
 ```
 
-    ## [1] "intergenic" "intronic"   "exonic"
+    ## [1] "intergenic" "intronic"   "exonic"     "UTR"
 
 Let's say we are interested in exonic variants with at least 3 bp of mh1L.
 
@@ -58,7 +58,7 @@ var3ex.genes.uniq = unique(unlist(var3ex.genes.l))
 length(var3ex.genes.uniq)
 ```
 
-    ## [1] 30700
+    ## [1] 20213
 
 ### Problem 1: some exonic variants have empty GENEINFO
 
@@ -68,14 +68,14 @@ GENEINFO comes from dbSNP while the *geneloc* annotation from overlapping Gencod
 subset(var3ex, GENEINFO == "-") %>% head %>% kable
 ```
 
-| chr  |   start|     end| GENEINFO | geneloc |  mh1L|
-|:-----|-------:|-------:|:---------|:--------|-----:|
-| chr1 |   63031|   63038| -        | exonic  |     7|
-| chr1 |   63034|   63036| -        | exonic  |     3|
-| chr1 |   63736|   63738| -        | exonic  |     3|
-| chr1 |   63736|   63738| -        | exonic  |     3|
-| chr1 |  134720|  134723| -        | exonic  |     3|
-| chr1 |  297438|  297441| -        | exonic  |     3|
+| chr  |     start|       end| GENEINFO | geneloc |  mh1L|
+|:-----|---------:|---------:|:---------|:--------|-----:|
+| chr1 |   1439773|   1439779| -        | exonic  |     6|
+| chr1 |   2800516|   2800518| -        | exonic  |     3|
+| chr1 |   6254881|   6254923| -        | exonic  |     5|
+| chr1 |  11806286|  11806300| -        | exonic  |     3|
+| chr1 |  16564158|  16564163| -        | exonic  |     6|
+| chr1 |  16564893|  16564898| -        | exonic  |     6|
 
 ### Problem 2: multiple genes in GENEINFO
 
@@ -111,11 +111,13 @@ genc$genetype = gsub(".*gene_type ([^;]*);.*", "\\1", genc$attributes)
 genc$genename = gsub(".*gene_name ([^;]*);.*", "\\1", genc$attributes)
 ```
 
+### Coding sequence of protein-coding genes
+
 Now let's create a GRanges object with the exons of *protein\_coding* genes, keeping the columns (to keep the gene names that we'll need later).
 
 ``` r
 library(GenomicRanges)
-exons.gr = genc %>% filter(type == "exon", genetype == "protein_coding") %>% 
+exons.gr = genc %>% filter(type == "CDS", genetype == "protein_coding") %>% 
     makeGRangesFromDataFrame(keep.extra.columns = TRUE)
 length(unique(exons.gr$genename))
 ```
@@ -130,6 +132,29 @@ exons3ex.gr = subsetByOverlaps(exons.gr, var3ex.gr)
 length(unique(exons3ex.gr$genename))
 ```
 
-    ## [1] 19348
+    ## [1] 17449
 
-19348 genes have a variant in exonic region.
+17449 genes have a variant overlapping coding sequence.
+
+### Micro RNA
+
+Now let's have a look at miRNAs.
+
+``` r
+mirna.gr = genc %>% filter(genetype == "miRNA") %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+length(unique(mirna.gr$genename))
+```
+
+    ## [1] 1879
+
+We have coordinates for 1879 miRNAs. We can now filter these miRNAs to keep only the ones overlapping the variants we selected previously.
+
+``` r
+var3ex.gr = makeGRangesFromDataFrame(var3ex)
+mirna3ex.gr = subsetByOverlaps(mirna.gr, var3ex.gr)
+length(unique(mirna3ex.gr$genename))
+```
+
+    ## [1] 20
+
+20 genes have a variant overlapping their sequence.
