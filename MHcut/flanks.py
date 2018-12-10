@@ -53,7 +53,7 @@ class VarFlank():
             al_trimmed = al_full
             consMM = 0
             consM = 0
-            for pos in range(len(al_full)-1):
+            for pos in range(len(al_full)):
                 if not al_full[pos]:
                     consMM += 1
                     self.mhMaxCons = max(self.mhMaxCons, consM)
