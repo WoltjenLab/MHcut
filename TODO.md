@@ -5,7 +5,7 @@
 	- How to filter the guides to select cuts inside/outside the MH.
 
 - Before submitting:
-    - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and [portal](http://crispr-browser.vhost38.genap.ca/).
+    - Add short paragraph about manuscript.
     - Transfer repo to Woltjen lab repo.
 	- Update READMEs with new repo path.
 	- Setup Dockerhub.
