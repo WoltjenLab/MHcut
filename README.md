@@ -1,6 +1,6 @@
 # MHcut
 
-- Results on deletions from dbSNP and ClinVar available online through the [MHcut Browser](http://mhcut-browser.genap.ca/).
+- Results on deletions from dbSNP and ClinVar available online through the [MHcut Browser](https://mhcut-browser.genap.ca/).
 
 ## Microhomology search
 
