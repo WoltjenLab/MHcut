@@ -1,0 +1,12 @@
+- Tutorials: 
+    - How to use a different PAM.
+	- How was the dbSNP/ClinVar analysis for the paper ran.
+	- How to filter the guides for specific 2-cuts filtering.
+	- How to filter the guides to select cuts inside/outside the MH.
+
+- Before submitting:
+    - Add short paragraph about manuscript with link to dbSNP/ClinVar analysis and [portal](http://crispr-browser.vhost38.genap.ca/).
+    - Transfer repo to Woltjen lab repo.
+	- Update READMEs with new repo path.
+	- Setup Dockerhub.
+	- Register package on PyPi.
