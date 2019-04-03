@@ -5,6 +5,7 @@ PAM classes with functions to work on PAMs.
 import seq_utils
 import subprocess
 import os
+import inDelphi.inDelphi
 
 
 class PAM():
@@ -34,6 +35,9 @@ class PAM():
         self.bnmh_vsize = 'NA'
         self.bnmh_gc = 'NA'
         self.bnmh_seq = 'NA'
+        # inDelphi predictions
+        self.indelphi_freq = 'NA'
+        self.indelphi_freq_size = 'NA'
 
 
 class PAMs():
@@ -271,6 +275,45 @@ class PAMs():
         # Remove temporary file
         os.remove(fasta_file)
 
+    def inDelphi(self, var, uniq_pam_only=False):
+        '''Run inDelphi to predict repair outcome.'''
+        pams = []
+        # If we want only unique PAMs, retrieve them
+        if uniq_pam_only:
+            for pam in self.pams:
+                if pam.uniq:
+                    pams.append(pam)
+        else:
+            # Otherwise analyze at all the PAMs
+            pams = self.pams
+        # Prepare input and target sequences
+        full_seq = var.fl1seq + var.varseq + var.fl2seq
+        target_seq = var.fl1seq + var.fl2seq
+        full_seq_rc = seq_utils.revComp(full_seq)
+        target_seq_rc = seq_utils.revComp(full_seq)
+        # For each PAM run inDelphi
+        for pam in pams:
+            if pam.strand == '-':
+                cut_pos = len(full_seq) - pam.cutPosition - 1
+                delphi_input = full_seq_rc
+                delphi_comp = target_seq_rc
+            else:
+                cut_pos = pam.cutPosition + 1
+                delphi_input = full_seq
+                delphi_comp = target_seq
+            pred_df, stats = inDelphi.inDelphi.predict(delphi_input, cut_pos)
+            pred_df = inDelphi.inDelphi.add_genotype_column(pred_df, stats)
+            size_freq = 0
+            for row in pred_df.iterrows():
+                if row[1]['Genotype'] == delphi_comp:
+                    if pam.indelphi_freq != 'NA':
+                        print 'Duplicated genotype in inDelphi?'
+                    pam.indelphi_freq = row[1]['Predicted frequency']
+                if(row[1]['Length'] == var.vsize and
+                   row[1]['Genotype position'] != 'e'):
+                    size_freq += row[1]['Predicted frequency']
+            pam.indelphi_freq_size = size_freq
+
     def findNestedMH(self, var, max_tail=50, min_l_nmh=3,
                      uniq_pam_only=False):
         '''Look for nested MH for each valid cut.'''
@@ -353,7 +396,8 @@ class PAMs():
             pam_str = [pam.proto, pam.pamseq, pam.mm0, pam.mm1, pam.mm2,
                        pam.m1Dist1, pam.m1Dist2, pam.mhDist1,  pam.mhDist2,
                        pam.nmh_nb, pam.nmh_maxL, pam.bnmh_score, pam.bnmh_size,
-                       pam.bnmh_vsize, pam.bnmh_gc, pam.bnmh_seq]
+                       pam.bnmh_vsize, pam.bnmh_gc, pam.bnmh_seq,
+                       pam.indelphi_freq, pam.indelphi_freq_size]
             pam_str = '\t'.join([str(ii) for ii in pam_str])
             tostr += voutline + '\t' + pam_str + '\n'
         return tostr
@@ -383,4 +427,5 @@ def headersGuides():
     # IF YOU CHANGE SOMETHING HERE, CHANGE THE toStringGuides TOO (above)
     return ['protospacer', 'pamSeq', 'mm0', 'mm1', 'mm2', 'm1Dist1', 'm1Dist2',
             'mhDist1', 'mhDist2', 'nbNMH', 'largestNMH', 'nmhScore', 'nmhSize',
-            'nmhVarL', 'nmhGC', 'nmhSeq']
+            'nmhVarL', 'nmhGC', 'nmhSeq', 'inDelphiFreqDel',
+            'inDelphiFreqSize']

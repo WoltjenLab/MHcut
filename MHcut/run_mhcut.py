@@ -59,6 +59,8 @@ def main():
     pam_pars.add_argument('-PAMcut', dest='pamcut', default=-3, type=int,
                           help='the cut position relative to the PAM motif. '
                           'Default is -3.')
+    pam_pars.add_argument('-indelphi', dest='indelphi', action='store_true',
+                          help="Run inDelphi to predict repair for each PAM.")
 
     # Parameters for MH search
     mh_pars = parser.add_argument_group('Micro-homology specification')

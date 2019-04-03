@@ -1,0 +1,3 @@
+[submodule "MHcut/inDelphi"]
+	path = MHcut/inDelphi
+	url = https://github.com/maxwshen/inDelphi-model.git

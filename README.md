@@ -51,7 +51,7 @@ Among other, the output contains information about the best nested MH (shortened
 Install with (this doesn't work yet, but will when MHcut is public):
 
 ```sh
-pip install MHcut
+pip install MHcut ## add --user if you don't have root
 ```
 
 Or for the latest version on GitHub:
@@ -59,8 +59,10 @@ Or for the latest version on GitHub:
 ```sh
 git clone https://github.com/jmonlong/MHcut.git
 cd MHcut
-pip install .
+pip install . ## add --user if you don't have root
 ```
+
+If using pip install `--user` make sure to add `/home/$(whoami)/.local/bin` to your `$PATH` if you want to run the MHcut script.
 
 You will also need **either** [Blast](http://bitly.com/1zTP2u6) or [JellyFish](http://www.genome.umd.edu/jellyfish.html).
 Follow the links or find [more information below](#install-dependencies).

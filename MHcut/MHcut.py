@@ -16,6 +16,7 @@ import pam_utils
 import variant
 import cartoon
 import tqdm
+import inDelphi.inDelphi
 
 
 def mhcut(args):
@@ -51,7 +52,7 @@ def mhcut(args):
     variant_input_file.close()
     variant_input_file = open(args.varfile, 'r')
 
-    # Read firt line of input file (header) and write header in output file
+    # Read first line of input file (header) and write header in output file
     # Change colunm names here.
     # Add/remove columns here but also in the "Write in output files" section
     inhead = variant_input_file.next().rstrip('\n')
@@ -62,6 +63,10 @@ def mhcut(args):
     gouthead = outhead + '\t' + '\t'.join(pam_utils.headersGuides())
     guide_outfile.write(gouthead + '\n')
     cartoon_outfile.write(outhead + '\n\n')
+
+    # Init inDelphi model if necessary
+    if args.indelphi:
+        inDelphi.inDelphi.init_model(celltype='mESC')
 
     # Start progress bar
     pbar = tqdm.tqdm(total=input_nb_lines)
@@ -169,6 +174,10 @@ def mhcut(args):
             pams.findNestedMH(var, max_tail=args.maxTail,
                               min_l_nmh=args.minLnmh,
                               uniq_pam_only=True)
+
+            if args.indelphi:
+                # Running inDelphi only for unique PAMs
+                pams.inDelphi(var, uniq_pam_only=True)
 
             # Write variant output line
             voutline = '\t'.join([input_line_raw, str(var.vsize),

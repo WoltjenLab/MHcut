@@ -10,3 +10,6 @@
 	- Update READMEs with new repo path.
 	- Setup Dockerhub.
 	- Register package on PyPi.
+
+- Code
+	- If using inDelphi, raise a warning if PAM sequence if not for SpCas9
