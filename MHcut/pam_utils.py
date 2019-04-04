@@ -289,15 +289,20 @@ class PAMs():
         else:
             # Otherwise analyze at all the PAMs
             pams = self.pams
-        if len(pams) > 0:
-            # Init frequencies to 0
-            self.max_indelphi_freq = 0
-            self.max_indelphi_freq_size = 0
         # Prepare input and target sequences
         full_seq = var.fl1seq + var.varseq + var.fl2seq
         target_seq = var.fl1seq + var.fl2seq
         full_seq_rc = seq_utils.revComp(full_seq)
         target_seq_rc = seq_utils.revComp(full_seq)
+        # If there is a N in the sequence, inDelphi raises an error.
+        # Let's skip these rare variants
+        if 'N' in full_seq:
+            return()
+        # Otherwise, we init the info and go over the cuts
+        if len(pams) > 0:
+            # Init frequencies to 0
+            self.max_indelphi_freq = 0
+            self.max_indelphi_freq_size = 0
         # For each PAM, run inDelphi and update PAM/variant stats
         for pam in pams:
             # Init frequencies to 0
