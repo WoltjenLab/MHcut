@@ -293,7 +293,7 @@ class PAMs():
         full_seq = var.fl1seq + var.varseq + var.fl2seq
         target_seq = var.fl1seq + var.fl2seq
         full_seq_rc = seq_utils.revComp(full_seq)
-        target_seq_rc = seq_utils.revComp(full_seq)
+        target_seq_rc = seq_utils.revComp(target_seq)
         # If there is a N in the sequence, inDelphi raises an error.
         # Let's skip these rare variants
         if 'N' in full_seq:

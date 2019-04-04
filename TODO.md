@@ -3,6 +3,7 @@
 	- How was the dbSNP/ClinVar analysis for the paper ran.
 	- How to filter the guides for specific 2-cuts filtering.
 	- How to filter the guides to select cuts inside/outside the MH.
+	- inDeplhi exploration: exact deletion vs size?
 
 - Before submitting:
     - Add short paragraph about manuscript.
@@ -13,3 +14,7 @@
 
 - Code
 	- If using inDelphi, raise a warning if PAM sequence if not for SpCas9
+	- Try to build Docker again. Does it take the submodule?
+
+- Doc
+	- inDelphi link and explanation.
