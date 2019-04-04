@@ -7,6 +7,10 @@ import subprocess
 import os
 import inDelphi.inDelphi
 
+# To ignore Pandas warnings (from inDelphi)
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 class PAM():
     '''Contains all the information about one PAM.'''
@@ -50,9 +54,12 @@ class PAMs():
             self.findPAMs(var_fl, pamseq, cut_offset, max_tail)
         # Global stats
         self.nb_pam_motives = 0
-        # Number of guides with no off target MH
+        # Number of guides with no off target MH (now called nested MH)
         self.no_offtargets = 'NA'
         self.min_offtargets = 'NA'
+        # inDelphi stats at the variant level
+        self.max_indelphi_freq = 'NA'
+        self.max_indelphi_freq_size = 'NA'
 
     def findPAMs(self, var_fl, pamseq, cut_offset, max_tail):
         '''Looks for PAM for a PAM sequence and cut offset.'''
@@ -277,6 +284,9 @@ class PAMs():
 
     def inDelphi(self, var, uniq_pam_only=False):
         '''Run inDelphi to predict repair outcome.'''
+        # Init frequencies to 0
+        self.max_indelphi_freq = 0
+        self.max_indelphi_freq_size = 0
         pams = []
         # If we want only unique PAMs, retrieve them
         if uniq_pam_only:
@@ -291,8 +301,12 @@ class PAMs():
         target_seq = var.fl1seq + var.fl2seq
         full_seq_rc = seq_utils.revComp(full_seq)
         target_seq_rc = seq_utils.revComp(full_seq)
-        # For each PAM run inDelphi
+        # For each PAM, run inDelphi and update PAM/variant stats
         for pam in pams:
+            # Init frequencies to 0
+            pam.indelphi_freq = 0
+            pam.indelphi_freq_size = 0
+            # Prepare cut position and sequences
             if pam.strand == '-':
                 cut_pos = len(full_seq) - pam.cutPosition - 1
                 delphi_input = full_seq_rc
@@ -301,18 +315,22 @@ class PAMs():
                 cut_pos = pam.cutPosition + 1
                 delphi_input = full_seq
                 delphi_comp = target_seq
+            # Run inDelphi
             pred_df, stats = inDelphi.inDelphi.predict(delphi_input, cut_pos)
             pred_df = inDelphi.inDelphi.add_genotype_column(pred_df, stats)
-            size_freq = 0
+            # Loop over prediction looking for target sequence/size
             for row in pred_df.iterrows():
                 if row[1]['Genotype'] == delphi_comp:
-                    if pam.indelphi_freq != 'NA':
-                        print 'Duplicated genotype in inDelphi?'
-                    pam.indelphi_freq = row[1]['Predicted frequency']
+                    pam.indelphi_freq = round(row[1]['Predicted frequency'], 3)
                 if(row[1]['Length'] == var.vsize and
                    row[1]['Genotype position'] != 'e'):
-                    size_freq += row[1]['Predicted frequency']
-            pam.indelphi_freq_size = size_freq
+                    pam.indelphi_freq_size += row[1]['Predicted frequency']
+            pam.indelphi_freq_size = round(pam.indelphi_freq_size, 3)
+            # Update variant-level stats
+            self.max_indelphi_freq_size = max(self.max_indelphi_freq_size,
+                                              pam.indelphi_freq_size)
+            self.max_indelphi_freq = max(self.max_indelphi_freq,
+                                         pam.indelphi_freq)
 
     def findNestedMH(self, var, max_tail=50, min_l_nmh=3,
                      uniq_pam_only=False):
@@ -380,7 +398,8 @@ class PAMs():
                 pams_uniq += 1
         # Create string to output
         tostr = [self.nbPAMs(), pams_uniq, self.no_offtargets,
-                 self.min_offtargets, self.getMax2cutsDist()]
+                 self.min_offtargets, self.getMax2cutsDist(),
+                 self.max_indelphi_freq, self.max_indelphi_freq_size]
         tostr = '\t'.join([str(ii) for ii in tostr])
         return tostr
 
@@ -410,7 +429,7 @@ def headersVariants(NAs=False):
     '''
     # IF YOU CHANGE SOMETHING HERE, CHANGE THE toStringVariants TOO (above)
     headers = ['pamMot', 'pamUniq', 'guidesNoNMH', 'guidesMinNMH',
-               'max2cutsDist']
+               'max2cutsDist', 'maxInDelphiFreqDel', 'maxInDelphiFreqSize']
     # Should it returns NAs instead of the headers
     # (useful when skipping variants)
     if NAs:

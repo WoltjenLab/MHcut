@@ -66,6 +66,7 @@ def mhcut(args):
 
     # Init inDelphi model if necessary
     if args.indelphi:
+        print('inDelphi initialization.')
         inDelphi.inDelphi.init_model(celltype='mESC')
 
     # Start progress bar

@@ -43,6 +43,7 @@ Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0*
 For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
 Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
 Among other, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
+**Something about inDelphi.**
 
 ## Install
 
@@ -166,6 +167,8 @@ Currently the columns of the output are:
 - *guidesNoNMH*: the number of guides that have no nested MH.
 - *guidesMinNMH*: the number of nested MH for the guide which have the least amount of nested MH.
 - *max2cutsDist*: the distance between the two unique cuts the furthest from each other. *NA* if *pamUniq*<2.
+- *maxInDelphiFreqDel* the maximum frequency predicted by inDelphi for this exact deletion (across all the unique cuts). 
+- *maxInDelphiFreqSize* the maximum frequency predicted by inDelphi for deletions of the correct size (across all the unique cuts). 
 
 ### The "guide" file
 
@@ -189,6 +192,8 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *nmhVarL* the length of the variant created by the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 - *nmhGC* the GC content of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 - *nmhSeq* the sequence of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
+- *inDelphiFreqDel* the frequency predicted by inDelphi for this exact deletion. 
+- *inDelphiFreqSize* the frequency predicted by inDelphi for deletions of the correct size.
 
 ### The "cartoon" file
 
