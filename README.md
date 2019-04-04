@@ -58,7 +58,7 @@ pip install MHcut ## add --user if you don't have root
 Or for the latest version on GitHub:
 
 ```sh
-git clone https://github.com/jmonlong/MHcut.git
+git clone --recursive https://github.com/jmonlong/MHcut.git
 cd MHcut
 pip install . ## add --user if you don't have root
 ```

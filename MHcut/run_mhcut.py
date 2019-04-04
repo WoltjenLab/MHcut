@@ -21,7 +21,7 @@ def main():
                         'instead of the one with strongest MH.')
     parser.add_argument('-noShift', dest='no_opt_shift',
                         action='store_true',
-                        help='use input coordinates without trying to'
+                        help='use input coordinates without trying to '
                         'shift the variant to find the best MH')
     parser.add_argument('-v0', dest='v0', action='store_true',
                         help='use older version.')

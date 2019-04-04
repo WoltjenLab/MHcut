@@ -7,10 +7,6 @@ import subprocess
 import os
 import inDelphi.inDelphi
 
-# To ignore Pandas warnings (from inDelphi)
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
 
 class PAM():
     '''Contains all the information about one PAM.'''
@@ -284,9 +280,6 @@ class PAMs():
 
     def inDelphi(self, var, uniq_pam_only=False):
         '''Run inDelphi to predict repair outcome.'''
-        # Init frequencies to 0
-        self.max_indelphi_freq = 0
-        self.max_indelphi_freq_size = 0
         pams = []
         # If we want only unique PAMs, retrieve them
         if uniq_pam_only:
@@ -296,6 +289,10 @@ class PAMs():
         else:
             # Otherwise analyze at all the PAMs
             pams = self.pams
+        if len(pams) > 0:
+            # Init frequencies to 0
+            self.max_indelphi_freq = 0
+            self.max_indelphi_freq_size = 0
         # Prepare input and target sequences
         full_seq = var.fl1seq + var.varseq + var.fl2seq
         target_seq = var.fl1seq + var.fl2seq

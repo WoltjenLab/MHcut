@@ -1,0 +1,4 @@
+[submodule "MHcut/inDelphi"]
+	path = MHcut/inDelphi
+	url = https://github.com/jmonlong/inDelphi-model.git
+	ignore = dirty
