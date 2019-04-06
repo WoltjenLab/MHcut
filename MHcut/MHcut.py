@@ -65,9 +65,10 @@ def mhcut(args):
     cartoon_outfile.write(outhead + '\n\n')
 
     # Init inDelphi model if necessary
+    idmodels = {}
     if args.indelphi:
-        print('inDelphi initialization.')
-        inDelphi.inDelphi.init_model(celltype='mESC')
+        for ct in ['mESC', 'U2OS', 'HEK293', 'HCT116', 'K562']:
+            idmodels[ct] = inDelphi.inDelphi.init_model(celltype=ct)
 
     # Start progress bar
     pbar = tqdm.tqdm(total=input_nb_lines)
@@ -178,7 +179,7 @@ def mhcut(args):
 
             if args.indelphi:
                 # Running inDelphi only for unique PAMs
-                pams.inDelphi(var, uniq_pam_only=True)
+                pams.inDelphi(idmodels, var, uniq_pam_only=True)
 
             # Write variant output line
             voutline = '\t'.join([input_line_raw, str(var.vsize),

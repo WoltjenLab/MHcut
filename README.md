@@ -167,8 +167,7 @@ Currently the columns of the output are:
 - *guidesNoNMH*: the number of guides that have no nested MH.
 - *guidesMinNMH*: the number of nested MH for the guide which have the least amount of nested MH.
 - *max2cutsDist*: the distance between the two unique cuts the furthest from each other. *NA* if *pamUniq*<2.
-- *maxInDelphiFreqDel* the maximum frequency predicted by inDelphi for this exact deletion (across all the unique cuts). 
-- *maxInDelphiFreqSize* the maximum frequency predicted by inDelphi for deletions of the correct size (across all the unique cuts). 
+- *maxInDelphiFreqmESC*,*maxInDelphiFreqU2OS*,*maxInDelphiFreqHEK293*,*maxInDelphiFreqHCT116*,*maxInDelphiFreqK562*: the maximum frequency predicted by inDelphi for this exact deletion (across all the unique cuts) for different cell types. 
 
 ### The "guide" file
 
@@ -192,8 +191,7 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *nmhVarL* the length of the variant created by the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 - *nmhGC* the GC content of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 - *nmhSeq* the sequence of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
-- *inDelphiFreqDel* the frequency predicted by inDelphi for this exact deletion. 
-- *inDelphiFreqSize* the frequency predicted by inDelphi for deletions of the correct size.
+- *inDelphiFreqmESC*,*inDelphiFreqU2OS*,*inDelphiFreqHEK293*,*inDelphiFreqHCT116*,*inDelphiFreqK562*: the frequency predicted by inDelphi for this exact deletion. 
 
 ### The "cartoon" file
 
