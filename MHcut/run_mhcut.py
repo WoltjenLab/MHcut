@@ -34,6 +34,9 @@ def main():
                             help='if using BLAST, the number of PAMs per '
                             'chunks. Default: 30. Pick lower value if BLAST '
                             'uses too much memory.')
+    align_pars.add_argument('-bwa', dest='bwa',
+                            action='store_true',
+                            help='use BWA for protospacer alignment')
 
     # Parameters about filtering
     filt_pars = parser.add_argument_group('Filters')

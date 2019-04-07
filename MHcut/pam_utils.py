@@ -6,6 +6,7 @@ import seq_utils
 import subprocess
 import os
 import inDelphi.inDelphi
+import re
 
 
 class PAM():
@@ -283,6 +284,82 @@ class PAMs():
                     pam.mm0 += int(line[1])
         # Remove temporary file
         os.remove(fasta_file)
+
+    def alignPamsBwa(self, reffile, include_pam=True, prefix='bwa'):
+        '''Align protospacers and update the PAMs.'''
+        pams_hash = {}
+        # Temporary file with the protospacer sequence to align
+        fastq_file = prefix + '_tempMHcut.fq'
+        ff = open(fastq_file, 'w')
+        cpt = 0
+        for pam in self.pams:
+            # Init PAM values
+            pam.mm0 = 0
+            pam.mm1 = 0
+            pam.mm2 = 0
+            # If Ns in the protospacer, skip
+            if 'N' in pam.proto:
+                pam.mm0 = 'NA'
+                pam.mm1 = 'NA'
+                pam.mm2 = 'NA'
+                continue
+            # Should we look for protospacer + PAM
+            if include_pam:
+                if pam.strand == '+':
+                    protoguide = pam.proto + pam.pamseq
+                else:
+                    protoguide = seq_utils.revComp(pam.pamseq) + pam.proto
+            else:
+                protoguide = pam.proto
+            # List sequence to remove the Ns (from the PAMs)
+            protoguides = seq_utils.enumN(protoguide)
+            for ii in xrange(len(protoguides)):
+                pamid = '{}_{}_{}'.format(pam.cutPosition, pam.strand, ii)
+                pams_hash[pamid] = pam
+                # Write the sequence
+                ff.write('@' + pamid + '\n' + protoguides[ii] + '\n+\n' +
+                         '~' * len(protoguides[ii]) + '\n')
+                cpt += 1
+        ff.close()
+        # If we wrote some sequence to align, run bwa
+        if cpt > 0:
+            # bwa aln command
+            sai_file = prefix + '_tempMHcut.sai'
+            aln_cmd = ['bwa', 'aln', '-n', '2', '-o', '0', '-N', '-i', '0',
+                       '-k', '2', '-f', sai_file, reffile, fastq_file]
+            dump = open('/dev/null')
+            subprocess.check_output(aln_cmd, stderr=dump)
+            dump.close()
+            # bwa samse command
+            samse_cmd = ['bwa', 'samse', '-n', '10000', reffile, sai_file,
+                         fastq_file]
+            dump = open('/dev/null')
+            samse_out = subprocess.check_output(samse_cmd, stderr=dump)
+            dump.close()
+            # Parse output
+            samse_out = samse_out.rstrip('\n').split('\n')
+            for line in samse_out:
+                if(line[0] != '@'):
+                    mm = [0, 0, 0]  # nb pos with mm0, mm1, mm2
+                    # primary alignment
+                    mism = re.search('NM:i:(\S*)', line).group(1)
+                    best = re.search('X0:i:(\S*)', line).group(1)
+                    # print line + 'mism:' + mism.group(1) + ' best:' + best.group(1)
+                    mm[int(mism)] += int(best)
+                    # secondary alignments
+                    if 'XA:Z' in line:
+                        salns = re.search('XA:Z:(\S*);', line).group(1)
+                        salns = salns.split(';')
+                        for saln in salns:
+                            saln = saln.split(',')
+                            mm[int(saln[3])] += 1
+                    line = line.split('\t')
+                    pam = pams_hash[line[0]]
+                    pam.mm0 += mm[0]
+                    pam.mm1 += mm[1]
+                    pam.mm2 += mm[2]
+        # Remove temporary file
+        os.remove(fastq_file)
 
     def inDelphi(self, idmodels, var, uniq_pam_only=False):
         '''Run inDelphi to predict repair outcome.'''

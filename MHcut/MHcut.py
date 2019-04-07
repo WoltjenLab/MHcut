@@ -163,8 +163,12 @@ def mhcut(args):
             # Align protospacers
             if pams.nbPAMs() > 0:
                 if args.jffile == '':
-                    pams.alignPamsBlast(args.reffile, prefix=args.outprefix,
-                                        chunk_size=args.chunkS)
+                    if args.bwa:
+                        pams.alignPamsBwa(args.reffile, prefix=args.outprefix)
+                    else:
+                        pams.alignPamsBlast(args.reffile,
+                                            prefix=args.outprefix,
+                                            chunk_size=args.chunkS)
                 else:
                     pams.alignPamsJellyfish(args.jffile, prefix=args.outprefix)
 
