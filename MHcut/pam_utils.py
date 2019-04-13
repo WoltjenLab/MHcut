@@ -76,14 +76,18 @@ class PAMs():
         var_L = len(var_fl.var.varseq)
         # Where we should look for cuts
         search_range = [fl_L - 1, fl_L + var_L - min_mh_cut]
+        # Interval between exact MHs
+        search_range_m1 = [fl_L - 1, fl_L + var_L - var_fl.m1L]
         # Interval between the full MHs
-        reduced_search_range = [fl_L - 1,
-                                fl_L + var_L - var_fl.mhL]
+        search_range_mh = [fl_L - 1,
+                           fl_L + var_L - var_fl.mhL]
         if var_fl.flank == 2:
             search_range = [fl_L + min_mh_cut - 1,
                             fl_L + var_L]
-            reduced_search_range = [fl_L + var_fl.mhL - 1,
-                                    fl_L + var_L]
+            search_range_m1 = [fl_L + var_fl.m1L - 1,
+                               fl_L + var_L]
+            search_range_mh = [fl_L + var_fl.mhL - 1,
+                               fl_L + var_L]
         # Test each position: if it matched the motif and
         # in the search range, add to list
         for pos in xrange(len(seq)-len(pamseq)+1):
@@ -112,10 +116,10 @@ class PAMs():
                 # perfect match or the extended MH
                 pam = PAM(pamseq=pamseq, cutPosition=cut_pos,
                           strand=strand, proto=proto_seq,
-                          m1Dist1=cut_pos - search_range[0],
-                          m1Dist2=search_range[1] - cut_pos - 1,
-                          mhDist1=cut_pos - reduced_search_range[0],
-                          mhDist2=reduced_search_range[1] - cut_pos - 1)
+                          m1Dist1=cut_pos - search_range_m1[0],
+                          m1Dist2=search_range_m1[1] - cut_pos - 1,
+                          mhDist1=cut_pos - search_range_mh[0],
+                          mhDist2=search_range_mh[1] - cut_pos - 1)
                 self.pams.append(pam)
 
     def nbPAMs(self):
