@@ -107,10 +107,11 @@ class PAMs():
                 if strand == '+':
                     proto_start = cut_pos - 19 - cut_offset
                     proto_end = cut_pos - cut_offset + 1
+                    proto_seq = seq[proto_start:proto_end]
                 else:
                     proto_start = cut_pos + cut_offset + 1
                     proto_end = cut_pos + 20 + cut_offset + 1
-                proto_seq = seq[proto_start:proto_end]
+                    proto_seq = seq_utils.revComp(seq[proto_start:proto_end])
                 # Info about the PAM found, including
                 # distance to MH on each side using first stretch of
                 # perfect match or the extended MH
@@ -190,10 +191,7 @@ class PAMs():
                     pam.mm2 = 'NA'
                     continue
                 if include_pam:
-                    if pam.strand == '+':
-                        protoguide = pam.proto + pam.pamseq
-                    else:
-                        protoguide = seq_utils.revComp(pam.pamseq) + pam.proto
+                    protoguide = pam.proto + pam.pamseq
                 else:
                     protoguide = pam.proto
                 protoguides = seq_utils.enumN(protoguide)
@@ -247,10 +245,7 @@ class PAMs():
                 continue
             # Should we look for protospacer + PAM
             if include_pam:
-                if pam.strand == '+':
-                    protoguide = pam.proto + pam.pamseq
-                else:
-                    protoguide = seq_utils.revComp(pam.pamseq) + pam.proto
+                protoguide = pam.proto + pam.pamseq
             else:
                 protoguide = pam.proto
             # List sequence to remove the Ns (from the PAMs)
@@ -309,10 +304,7 @@ class PAMs():
                 continue
             # Should we look for protospacer + PAM
             if include_pam:
-                if pam.strand == '+':
                     protoguide = pam.proto + pam.pamseq
-                else:
-                    protoguide = seq_utils.revComp(pam.pamseq) + pam.proto
             else:
                 protoguide = pam.proto
             # List sequence to remove the Ns (from the PAMs)
