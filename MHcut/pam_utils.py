@@ -226,6 +226,18 @@ class PAMs():
                         if int(line[4]) == 2:
                             pam_cand.mm2 += 1
             os.remove(fasta_file)
+        # Correct for bias due to enumerating PAMs
+        for pams in pams_chunks:
+            for pam in pams:
+                if 'N' in pam.proto:
+                    continue
+                if include_pam:
+                    protoguide = pam.proto + pam.pamseq
+                else:
+                    protoguide = pam.proto
+                protoguides = seq_utils.enumN(protoguide)
+                pam.mm1 = pam.mm1 - (len(protoguides)-1) * pam.mm0
+                pam.mm2 = pam.mm2 - (len(protoguides)-1) * pam.mm1
 
     def alignPamsSeededGuides(self, sguides):
         '''Align protospacers and update the PAMs.'''
@@ -366,7 +378,6 @@ class PAMs():
                     # primary alignment
                     mism = re.search('NM:i:(\S*)', line).group(1)
                     best = re.search('X0:i:(\S*)', line).group(1)
-                    # print line + 'mism:' + mism.group(1) + ' best:' + best.group(1)
                     mm[int(mism)] += int(best)
                     # secondary alignments
                     if 'XA:Z' in line:
@@ -382,6 +393,17 @@ class PAMs():
                     pam.mm2 += mm[2]
         # Remove temporary file
         os.remove(fastq_file)
+        # Correct for bias due to enumerating PAMs
+        for pam in self.pams:
+            if 'N' in pam.proto:
+                continue
+            if include_pam:
+                protoguide = pam.proto + pam.pamseq
+            else:
+                protoguide = pam.proto
+            protoguides = seq_utils.enumN(protoguide)
+            pam.mm1 = pam.mm1 - (len(protoguides)-1) * pam.mm0
+            pam.mm2 = pam.mm2 - (len(protoguides)-1) * pam.mm1
 
     def inDelphi(self, idmodels, var, uniq_pam_only=False):
         '''Run inDelphi to predict repair outcome.'''
