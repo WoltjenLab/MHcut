@@ -22,6 +22,7 @@ First load the packages:
 library(data.table) # good for big data
 library(dplyr) # To manipulate/transform data.frames
 library(magrittr) # pipes (e.g. %>%)
+library(tidyr)
 
 ## For graphs and tables
 library(ggplot2)
@@ -35,123 +36,86 @@ winsor <- function(x, u=10){
 }
 ```
 
-Then we'll read the input TSV file (with 43M variants) using the `fread` function.
+Then we'll read the input TSV file for the guides using the `fread` function.
+Of note multiple guides might be present for each variant in the *guides* file but that is fine because we want to look at the inDelphi prediction for each cut.
 This will create a *data.table* object which uses disk space rather than memory (if I understand correctly) so it's good for big data.
 To reduce the amount of data loaded in R, let's only load some specific columns (using `select=`).
 
 ```{r read}
 ## Read the first row (headers) to remind us the order of each column
-read.table('../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-indelphi-variants.tsv.gz', nrows=1)
-## Import variants and colums varL, mhL, guidesMinNMH, maxInDelphiFreqDel, maxInDelphiFreqSize
-var = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-indelphi-variants.tsv.gz',
-            select=c(20, 21, 34, 36, 37))
+read.table('../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-indelphi5-guides.tsv.gz', nrows=1)
+## Import variants and colums varL, mhL, mh1Dist, nbNMH, and the 5 inDelphi columns
+gds = fread('gunzip -c ../scripts-dbSNP-ClinVar/mhcut-dbsnp-clinvar-deletion-indelphi5-guides.tsv.gz',
+            select=c(20, 21, 27, 50, 57:61))
+gds.df = as.data.frame(gds)
 ```
 
-This takes about 1 min.
-Now the `var` object is a *data.table* with 43M values. 
+## Average predicted frequency across cell types
 
-Let's keep only variants whose inDelphi columns are not *NA*.
-
-```{r filter}
-var = var[!is.na(maxInDelphiFreqDel)]
-head(var)
-nrow(var)
+```{r mean}
+gds.df$inDelphiFreqMean = rowMeans(as.matrix(gds.df[, 5:9]))
+gds.df %>% head %>% kable
 ```
-
-This is now "just" `r nrow(var)` values so we can convert to *data.frame* and use dplyr/ggplot to make the graph.
-
-## Prediction per deletion or per size
-
-```{r freq.del.size}
-var.df = as.data.frame(var)
-
-ggplot(var.df, aes(x=maxInDelphiFreqSize-maxInDelphiFreqDel)) +
-  geom_histogram() + theme_bw()
-
-ggplot(var.df, aes(x=maxInDelphiFreqDel, y=maxInDelphiFreqSize, fill=log10(..count..))) +
-  geom_bin2d(colour='black') + scale_fill_gradient(low='grey90', high='black') + 
-  theme_bw() + geom_abline(linetype=2)
-```
-
-Is the difference between the per-deletion and per-size metric correlated with variant size or other features?
-
-```{r freq.del.size.diff}
-var.df %>% mutate(indelphi.diff=cut(maxInDelphiFreqSize-maxInDelphiFreqDel,
-                                    breaks=c(0,5,10,30,50,100), include.lowest=TRUE)) %>% 
-  ggplot(aes(x=indelphi.diff, y=winsor(varL, 50), fill=maxInDelphiFreqDel==0)) +
-  geom_violin(scale='width') + geom_boxplot(alpha=0) + 
-  theme_bw()
-
-var.df %>% mutate(indelphi.diff=cut(maxInDelphiFreqSize-maxInDelphiFreqDel,
-                                    breaks=c(0,5,10,30,50,100), include.lowest=TRUE)) %>% 
-  ggplot(aes(x=indelphi.diff, y=winsor(mhL, 50), fill=maxInDelphiFreqDel==0)) +
-  geom_violin(scale='width') + geom_boxplot(alpha=0) + 
-  theme_bw()
-
-var.df %>% mutate(indelphi.diff=cut(maxInDelphiFreqSize-maxInDelphiFreqDel,
-                                    breaks=c(0,5,10,30,50,100), include.lowest=TRUE)) %>% 
-  ggplot(aes(x=indelphi.diff, y=winsor(guidesMinNMH, 20), fill=maxInDelphiFreqDel==0)) +
-  geom_violin(scale='width') + geom_boxplot(alpha=0) + 
-  theme_bw()
-```
-
-It looks like the variant with much higher per-size frequency than per-variant frequency are:
-
-1. of medium size, e.g. ~10bp.
-1. with good MH.
-1. with some nested MH.
-
-That kind of makes sense: there are nested MH that maybe create a frequent deletions of similar size but not exactly the one we want.
-
-However, when the per-deletion frequency is exactly 0, the patterns are a bit different and for those it might be a problem of matching inDelphi's output with our deletion.
 
 ## Predicted frequency and variant size
 
 ```{r freq.vsize}
-var.df %>% mutate(varL=cut(varL, breaks=c(0,1,3,5,10,20,30,Inf))) %>%
-  ggplot(aes(x=varL, y=maxInDelphiFreqDel)) +
-  geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
-  theme_bw()
-
-var.df %>% mutate(varL=cut(varL, breaks=c(0,1,3,5,10,20,30,Inf))) %>%
-  ggplot(aes(x=varL, y=maxInDelphiFreqSize)) +
+gds.df %>% mutate(varL=cut(varL, breaks=c(0,1,3,5,10,20,30,Inf))) %>%
+  ggplot(aes(x=varL, y=inDelphiFreqMean)) +
   geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
   theme_bw()
 ```
 
 The average predicted frequencies tend to decrease when the variant gets too big (>10-20bp).
+However, the variance increases with some large variants reaching high predicted frequencies.
 
 ## Predicted frequency and MH length
 
 ```{r freq.mhl}
-var.df %>% mutate(mhL=cut(mhL, breaks=c(0,1,3,5,10,20,30,Inf))) %>%
-  ggplot(aes(x=mhL, y=maxInDelphiFreqDel)) +
-  geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
-  theme_bw()
-
-var.df %>% mutate(mhL=cut(mhL, breaks=c(0,1,3,5,10,20,30,Inf))) %>%
-  ggplot(aes(x=mhL, y=maxInDelphiFreqSize)) +
+gds.df %>% mutate(mhL=cut(mhL, breaks=c(0,1,3,5,10,20,30,Inf))) %>%
+  ggplot(aes(x=mhL, y=inDelphiFreqMean)) +
   geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
   theme_bw()
 ```
 
-However it's quite similar across different MH levels.
+It's quite similar across different MH levels.
 
 ## Predicted frequency and nested MH
 
 ```{r freq.nmh}
-var.df %>% filter(!is.na(guidesMinNMH)) %>%
-  mutate(guidesMinNMH=cut(guidesMinNMH, breaks=c(-Inf, 0,1,3,5,10,20,30,Inf))) %>%
-  ggplot(aes(x=guidesMinNMH, y=maxInDelphiFreqDel)) +
+gds.df %>% 
+  mutate(nbNMH=cut(nbNMH, breaks=c(-Inf, 0,1,3,5,10,20,30,Inf))) %>%
+  ggplot(aes(x=nbNMH, y=inDelphiFreqMean)) +
   geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
   theme_bw()
 
-var.df %>% filter(!is.na(guidesMinNMH)) %>%
-  mutate(guidesMinNMH=cut(guidesMinNMH, breaks=c(-Inf, 0,1,3,5,10,20,30,Inf))) %>%
-  ggplot(aes(x=guidesMinNMH, y=maxInDelphiFreqSize)) +
-  geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
-  theme_bw()
 ```
 
 The highest predicted frequency is nicely anti-correlated with the number of nested MH for the guide which have the least amount of nested MH.
 That's good because that was one estimate used to get an idea of efficiency.
+
+## Predicted frequency and distance between MH
+
+```{r mhdist}
+gds.df %>% 
+  mutate(mh1Dist=factor(winsor(mh1Dist, 20))) %>%
+  ggplot(aes(x=mh1Dist, y=inDelphiFreqMean)) +
+  geom_violin(scale='width', fill='grey90') + geom_boxplot(alpha=0) + 
+  theme_bw() + 
+  xlab("MH distance (bp)") + ylab("median inDelphi prevalence (%)")+
+  scale_x_discrete(breaks=c(0:20), labels=c(0:19,"20+")) +
+  scale_y_continuous(name="inDelphi prevalence (%)")
+
+mhdist.med = gds.df %>% mutate(mh1Dist=winsor(mh1Dist, 20)) %>%
+  group_by(mh1Dist) %>% summarize_all(median, na.rm=TRUE)
+
+mhdist.med %>% gather(celltype, freq, -mh1Dist, -varL, -mhL, -nbNMH, -inDelphiFreqMean) %>%
+  mutate(celltype=gsub('inDelphiFreq','',celltype)) %>% 
+  ggplot(aes(x=mh1Dist, y=freq, colour=celltype)) +
+  geom_line() + scale_colour_brewer(palette='Set1') + 
+  theme_bw() + 
+  xlab("MH distance (bp)") + ylab("median inDelphi prevalence (%)")+
+  scale_x_continuous(breaks=c(0:20), labels=c(0:19,"20+")) +
+  scale_y_continuous(name="inDelphi prevalence (%)")
+
+```
