@@ -57,7 +57,7 @@ def mhcut(args):
     # Add/remove columns here but also in the "Write in output files" section
     inhead = variant_input_file.next().rstrip('\n')
     outhead = inhead + '\tvarL'
-    outhead += '\t' + '\t'.join(flanks.headers(flank_info=args.twofls))
+    outhead += '\t' + '\t'.join(flanks.headers(flank_info=True))
     outhead += '\t' + '\t'.join(pam_utils.headersVariants())
     variant_outfile.write(outhead + '\n')
     gouthead = outhead + '\t' + '\t'.join(pam_utils.headersGuides())
@@ -150,7 +150,7 @@ def mhcut(args):
                 # If nofilter mode, print the variant output line
                 if args.nofilter:
                     voutline = '\t'.join([input_line_raw, str(var.vsize),
-                                          var_fl.toString(args.twofls)] +
+                                          var_fl.toString(True)] +
                                          pam_utils.headersVariants(NAs=True))
                     variant_outfile.write(voutline + '\n')
                 continue
@@ -187,7 +187,7 @@ def mhcut(args):
 
             # Write variant output line
             voutline = '\t'.join([input_line_raw, str(var.vsize),
-                                 var_fl.toString(args.twofls),
+                                 var_fl.toString(True),
                                   pams.toStringVariants()])
             variant_outfile.write(voutline + '\n')
 
