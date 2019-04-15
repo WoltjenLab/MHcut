@@ -360,14 +360,15 @@ class PAMs():
     def inDelphi(self, idmodels, var, uniq_pam_only=False):
         '''Run inDelphi to predict repair outcome.'''
         pams = []
-        # If we want only unique PAMs, retrieve them
-        if uniq_pam_only:
-            for pam in self.pams:
-                if pam.uniq:
-                    pams.append(pam)
-        else:
-            # Otherwise analyze at all the PAMs
-            pams = self.pams
+        nuniq = 0
+        for pam in self.pams:
+            if pam.uniq:
+                nuniq += 1
+            else:
+                # If we want only unique PAMs, skip
+                if uniq_pam_only:
+                    continue
+            pams.append(pam)
         # Prepare input and target sequences
         full_seq = var.fl1seq + var.varseq + var.fl2seq
         target_seq = var.fl1seq + var.fl2seq
@@ -378,7 +379,7 @@ class PAMs():
         if 'N' in full_seq:
             return()
         # Otherwise, we init the info and go over the cuts
-        if len(pams) > 0:
+        if nuniq > 0:
             # Init frequencies to 0
             self.max_indelphi_mESC = 0
             self.max_indelphi_U2OS = 0
@@ -411,41 +412,44 @@ class PAMs():
                 # Loop over prediction looking for target sequence/size
                 for row in pred_df.iterrows():
                     if row[1]['Genotype'] == delphi_comp:
+                        pfreq = round(row[1]['Predicted frequency'], 3)
                         if ct == 'mESC':
-                            pam.indelphi_mESC = round(row[1]['Predicted frequency'], 3)
+                            pam.indelphi_mESC = pfreq
                         if ct == 'U2OS':
-                            pam.indelphi_U2OS = round(row[1]['Predicted frequency'], 3)
+                            pam.indelphi_U2OS = pfreq
                         if ct == 'HEK293':
-                            pam.indelphi_HEK293 = round(row[1]['Predicted frequency'], 3)
+                            pam.indelphi_HEK293 = pfreq
                         if ct == 'HCT116':
-                            pam.indelphi_HCT116 = round(row[1]['Predicted frequency'], 3)
+                            pam.indelphi_HCT116 = pfreq
                         if ct == 'K562':
-                            pam.indelphi_K562 = round(row[1]['Predicted frequency'], 3)
-            # Update variant-level stats
-            self.max_indelphi_mESC = max(self.max_indelphi_mESC,
-                                         pam.indelphi_mESC)
-            self.max_indelphi_U2OS = max(self.max_indelphi_U2OS,
-                                         pam.indelphi_U2OS)
-            self.max_indelphi_HEK293 = max(self.max_indelphi_HEK293,
-                                           pam.indelphi_HEK293)
-            self.max_indelphi_HCT116 = max(self.max_indelphi_HCT116,
-                                           pam.indelphi_HCT116)
-            self.max_indelphi_K562 = max(self.max_indelphi_K562,
-                                         pam.indelphi_K562)
+                            pam.indelphi_K562 = pfreq
+            # Update variant-level stats if PAM is unique
+            if pam.uniq:
+                self.max_indelphi_mESC = max(self.max_indelphi_mESC,
+                                             pam.indelphi_mESC)
+                self.max_indelphi_U2OS = max(self.max_indelphi_U2OS,
+                                             pam.indelphi_U2OS)
+                self.max_indelphi_HEK293 = max(self.max_indelphi_HEK293,
+                                               pam.indelphi_HEK293)
+                self.max_indelphi_HCT116 = max(self.max_indelphi_HCT116,
+                                               pam.indelphi_HCT116)
+                self.max_indelphi_K562 = max(self.max_indelphi_K562,
+                                             pam.indelphi_K562)
 
     def findNestedMH(self, var, max_tail=50, min_l_nmh=3,
                      uniq_pam_only=False):
         '''Look for nested MH for each valid cut.'''
         # Search for other MH that could be used by the MMEJ
         pams = []
-        # If we want only unique PAMs, retrieve them
-        if uniq_pam_only:
-            for pam in self.pams:
-                if pam.uniq:
-                    pams.append(pam)
-        else:
-            # Otherwise analyze at all the PAMs
-            pams = self.pams
+        nuniq = 0
+        for pam in self.pams:
+            if pam.uniq:
+                nuniq += 1
+            else:
+                # If we want only unique PAMs, skip
+                if uniq_pam_only:
+                    continue
+            pams.append(pam)
         # Look for nested MH on variants that are small enough
         if len(pams) > 0 and var.vsize < max_tail*2:
             full_seq = var.fl1seq + var.varseq + var.fl2seq
@@ -477,17 +481,19 @@ class PAMs():
                             pam.bnmh_vsize = data['vsize']
                             pam.bnmh_gc = round(data['gc'], 3)
                             pam.bnmh_seq = data['seq']
-                # Update global info
-                # Number of PAMs with no nested MH
-                if self.no_offtargets == 'NA':
-                    self.no_offtargets = 0
-                if pam.nmh_nb == 0:
-                    self.no_offtargets += 1
-                # Number of nested MH in the PAM with the least
-                if self.min_offtargets == 'NA':
-                    self.min_offtargets = pam.nmh_nb
-                else:
-                    self.min_offtargets = min(self.min_offtargets, pam.nmh_nb)
+                if pam.uniq:
+                    # Update global info
+                    # Number of PAMs with no nested MH
+                    if self.no_offtargets == 'NA':
+                        self.no_offtargets = 0
+                    if pam.nmh_nb == 0:
+                        self.no_offtargets += 1
+                    # Number of nested MH in the PAM with the least
+                    if self.min_offtargets == 'NA':
+                        self.min_offtargets = pam.nmh_nb
+                    else:
+                        self.min_offtargets = min(self.min_offtargets,
+                                                  pam.nmh_nb)
 
     def toStringVariants(self):
         '''The relevant string to write in the "variants" output.'''

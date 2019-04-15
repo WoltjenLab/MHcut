@@ -179,11 +179,11 @@ def mhcut(args):
             # Looking for nested MH only in unique PAMs
             pams.findNestedMH(var, max_tail=args.maxTail,
                               min_l_nmh=args.minLnmh,
-                              uniq_pam_only=True)
+                              uniq_pam_only=False)
 
             if args.indelphi:
                 # Running inDelphi only for unique PAMs
-                pams.inDelphi(idmodels, var, uniq_pam_only=True)
+                pams.inDelphi(idmodels, var, uniq_pam_only=False)
 
             # Write variant output line
             voutline = '\t'.join([input_line_raw, str(var.vsize),
@@ -193,7 +193,7 @@ def mhcut(args):
 
             # Write guides output lines
             goutline = pams.toStringGuides(voutline=voutline,
-                                           uniq_pam_only=True)
+                                           uniq_pam_only=False)
             guide_outfile.write(goutline)
 
             # Write the cartoon

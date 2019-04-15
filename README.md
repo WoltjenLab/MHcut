@@ -43,7 +43,10 @@ Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0*
 For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
 Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
 Among other, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
+
 **Something about inDelphi.**
+
+**Explain that variant-level estimate of nested MH and indelphi are based on unique PAM.**
 
 ## Install
 
