@@ -227,6 +227,32 @@ class PAMs():
                             pam_cand.mm2 += 1
             os.remove(fasta_file)
 
+    def alignPamsSeededGuides(self, sguides):
+        '''Align protospacers and update the PAMs.'''
+        for pam in self.pams:
+            # Init PAM values
+            pam.mm0 = 0
+            pam.mm1 = 0
+            pam.mm2 = 0
+            # If Ns in the protospacer, skip
+            if 'N' in pam.proto:
+                pam.mm0 = 'NA'
+                pam.mm1 = 'NA'
+                pam.mm2 = 'NA'
+                continue
+            protoguide = pam.proto + pam.pamseq
+            # List sequence to remove the Ns (from the PAMs)
+            protoguides = seq_utils.enumN(protoguide)
+            for pg in protoguides:
+                # Align guide
+                mm_pg = sguides.querySeq(pg)
+                pam.mm0 += mm_pg[0]
+                pam.mm1 += mm_pg[1]
+                pam.mm2 += mm_pg[2]
+            # Correct for bias due to enumerating PAMs
+            pam.mm1 = pam.mm1 - (len(protoguides)-1) * pam.mm0
+            pam.mm2 = pam.mm2 - (len(protoguides)-1) * pam.mm1
+
     def alignPamsJellyfish(self, jffile, include_pam=True, prefix='jf'):
         '''Align protospacers and update the PAMs.'''
         pams_hash = {}

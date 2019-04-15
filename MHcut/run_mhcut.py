@@ -30,6 +30,10 @@ def main():
     align_pars = parser.add_argument_group('Protospacer alignment')
     align_pars.add_argument('-jf', dest='jffile', default='',
                             help='the jellyfish file of the reference genome.')
+    align_pars.add_argument('-h5', dest='h5file', default='',
+                            help='the hdf5 file with seeds for all possible '
+                            'guides in the reference genome. Created '
+                            'automatically is missing.')
     align_pars.add_argument('-chunkS', type=int, default=30,
                             help='if using BLAST, the number of PAMs per '
                             'chunks. Default: 30. Pick lower value if BLAST '

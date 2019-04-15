@@ -17,6 +17,7 @@ import variant
 import cartoon
 import tqdm
 import inDelphi.inDelphi
+import guide_align
 
 
 def mhcut(args):
@@ -30,6 +31,25 @@ def mhcut(args):
     reffa = Fasta(args.reffile)
     if not fa_indexed:
         print "Indexing completed."
+
+    # Parse PAM sequences
+    pamseqs = args.pamseq.split(',')
+
+    # Create the hdf5 file for guide alignment if necessary
+    sguides = False
+    if args.h5file != '':
+        fh5_exists = os.path.isfile(args.h5file)
+        if not fh5_exists:
+            print "The hdf5 file for guide alignment doesn't exist."
+            print "Generating it now (might take a long time for " \
+                "large genomes)..."
+            if len(pamseqs) > 1:
+                print "For now hdf5 guide alignment works only for " \
+                    "one PAM at a time."
+                exit()
+            sguides = guide_align.SeededGuides(file_name=args.h5file,
+                                               PAM=pamseqs[0])
+            sguides.scanRef(ref_file=args.reffile)
 
     if(args.varfile == ''):
         print "Use -ref and -var to run MHcut. "
@@ -156,7 +176,6 @@ def mhcut(args):
                 continue
 
             # Find PAM motives
-            pamseqs = args.pamseq.split(',')
             pams = pam_utils.PAMs(var_fl, pamseqs, cut_offset=args.pamcut,
                                   max_tail=args.maxTail)
 
@@ -166,9 +185,12 @@ def mhcut(args):
                     if args.bwa:
                         pams.alignPamsBwa(args.reffile, prefix=args.outprefix)
                     else:
-                        pams.alignPamsBlast(args.reffile,
-                                            prefix=args.outprefix,
-                                            chunk_size=args.chunkS)
+                        if args.h5file == '':
+                            pams.alignPamsBlast(args.reffile,
+                                                prefix=args.outprefix,
+                                                chunk_size=args.chunkS)
+                        else:
+                            pams.alignPamsSeededGuides(sguides)
                 else:
                     pams.alignPamsJellyfish(args.jffile, prefix=args.outprefix)
 
