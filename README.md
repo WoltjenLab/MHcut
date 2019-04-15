@@ -270,3 +270,11 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 
 *Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
 
+
+### In-house guide alignment using HDF5 file
+
+On some file system you might get an error because file locking is not enabled.
+
+```
+Unable to create file (file locking disabled on this file system (use HDF5_USE_FILE_LOCKING environment variable to override)
+```
