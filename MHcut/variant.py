@@ -9,7 +9,7 @@ class Variant():
         self.reffa = reffa
         self.vsize = vend - vstart + 1
         # Retrieve sequences. Careful with position and shift
-        self.flsize = max(self.vsize, 20)
+        self.flsize = max(self.vsize, 60)
         self.varseq = reffa[v_chr][(vstart-1):vend]
         self.fl1seq = reffa[v_chr][(vstart-self.flsize-1):(vstart-1)]
         self.fl2seq = reffa[v_chr][vend:(vend+self.flsize)]
