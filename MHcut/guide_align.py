@@ -24,13 +24,30 @@ class SeededGuides:
 
     def scanRef(self, ref_file, verbose=True,
                 chrs=['chr' + str(ii) for ii in range(1, 23) + ['X', 'Y']]):
+        '''Scan a reference FASTA file, by chr and chunks.'''
         for record in SeqIO.parse(ref_file, "fasta"):
             if record.id in chrs:
                 if verbose:
                     print 'Scanning ' + record.id + '...'
-                self.scanChunk(record.seq, record.id, verbose=verbose)
+                # split into chunks if larger than 100 Mbp
+                chunk_size = 100000000
+                if len(record.seq) > chunk_size:
+                    nb_chunks = (len(record.seq) / chunk_size) + 1
+                    chunk_size = int(len(record.seq)/nb_chunks)
+                    for chunk in range(nb_chunks):
+                        chunk_start = chunk*chunk_size
+                        if chunk == nb_chunks - 1:
+                            chunk_end = -1
+                        else:
+                            chunk_end = (chunk+1)*chunk_size
+                        if verbose and nb_chunks > 1:
+                            print 'Chunk ' + str(chunk) + '...'
+                        self.scanChunk(record.seq, verbose=verbose,
+                                       idx_start=chunk_start,
+                                       idx_end=chunk_end)
 
-    def scanChunk(self, seq, chr_name, idx_start=0, idx_end=-1, verbose=True):
+    def scanChunk(self, seq, idx_start=0, idx_end=-1, verbose=True):
+        '''Scans a sequence chunk between start and end indexes.'''
         if verbose:
             # Start progress bar
             pbar = tqdm.tqdm(total=len(seq))
@@ -42,6 +59,9 @@ class SeededGuides:
         # if not specified scan to the end of the seq
         if idx_end == -1:
             idx_end = len(seq)
+        # adjust the last position to consider
+        if idx_end > len(seq)-self.k:
+            idx_end = len(seq)-self.k
         # prepare objects and open hdf5 file
         seqs = []
         seeds = {}
@@ -51,7 +71,7 @@ class SeededGuides:
         cpt = hfseqs.shape[1]
         # Loop over kmers
         line_cpt = 0
-        for ii in xrange(len(seq)-self.k):
+        for ii in xrange(idx_start, idx_end):
             seq_ii = seq[ii:(ii+self.k)]
             seq_ii = str(seq_ii).upper()
             # Discard kmer with a N in the reference
