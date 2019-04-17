@@ -36,19 +36,17 @@ def mhcut(args):
     pamseqs = args.pamseq.split(',')
 
     # Create the hdf5 file for guide alignment if necessary
-    sguides = False
+    sguides = guide_align.SeededGuides(file_name=args.h5file, PAM=pamseqs[0])
     if args.h5file != '':
-        fh5_exists = os.path.isfile(args.h5file)
-        if not fh5_exists:
+        if not os.path.isfile(args.h5file):
             print "The hdf5 file for guide alignment doesn't exist."
-            print "Generating it now (might take a long time for " \
+            print "Generating it now (might take several hours for " \
                 "large genomes)..."
             if len(pamseqs) > 1:
                 print "For now hdf5 guide alignment works only for " \
                     "one PAM at a time."
                 exit()
-            sguides = guide_align.SeededGuides(file_name=args.h5file,
-                                               PAM=pamseqs[0])
+            sguides.initFile()
             sguides.scanRef(ref_file=args.reffile)
 
     if(args.varfile == ''):

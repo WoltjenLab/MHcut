@@ -16,10 +16,12 @@ class SeededGuides:
         self.sl = sl
         self.k = k
         self.PAM = PAM
+
+    def initFile(self):
         # Init HDF5 file
         hf = h5py.File(self.file_name, 'w')
         hf.create_group('seeds')
-        hf.create_dataset('seqs', (1, 0), dtype='S23', maxshape=(1, None))
+        hf.create_dataset('seqs', (0, 1), dtype='S23', maxshape=(None, 1))
         hf.close()
 
     def scanRef(self, ref_file, verbose=True,
@@ -68,7 +70,7 @@ class SeededGuides:
         PAMrc = seq_utils.revComp(self.PAM)
         hf = h5py.File(self.file_name, 'a')
         hfseqs = hf['seqs']
-        cpt = hfseqs.shape[1]
+        cpt = hfseqs.shape[0]
         # Loop over kmers
         line_cpt = 0
         for ii in xrange(idx_start, idx_end):
@@ -104,9 +106,9 @@ class SeededGuides:
                 pbar.update(pbar.total - pbar.last_print_n)
             pbar.close()
         # Update sequences in HDF5 file
-        cpt = hfseqs.shape[1]
-        hfseqs.resize((1, hfseqs.shape[1] + len(seqs)))
-        hfseqs[0, cpt:] = seqs
+        cpt = hfseqs.shape[0]
+        hfseqs.resize((hfseqs.shape[0] + len(seqs), 1))
+        hfseqs[cpt:, 0] = seqs
         # Update seeds in HDF5 file
         for seed in seeds:
             seed_pos = seeds[seed]
@@ -130,16 +132,26 @@ class SeededGuides:
             seed = inseq[sstart:(sstart+self.sl)]
             if 'seeds/' + seed in hf:
                 for ss in hf['seeds/' + seed][0]:
-                    seq_cands[ss] = True
+                    if ss in seq_cands:
+                        seq_cands[ss] += 1
+                    else:
+                        seq_cands[ss] = 1
+        # Keep only positions with 2 seeds
+        seqs2 = []
+        for seqid in seq_cands:
+            if seq_cands[seqid] > 1:
+                seqs2.append(seqid)
         # Align and compute number of mismatches
         nm_sum = [0, 0, 0]
-        hfseqs = hf['seqs'][0]
-        for seqid in seq_cands:
-            seq = str(hfseqs[seqid])
+        hfseqs = hf['seqs']
+        for seqid in seqs2:
+            seq = str(hfseqs[seqid][0])
             nm = 0
             for ii in range(len(seq)):
                 if seq[ii] != inseq[ii]:
                     nm += 1
+                    if nm > 2:
+                        break
             if nm == 0:
                 nm_sum[0] += 1
             if nm == 1:
