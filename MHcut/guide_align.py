@@ -30,29 +30,29 @@ class SeededGuides:
         for record in SeqIO.parse(ref_file, "fasta"):
             if record.id in chrs:
                 if verbose:
-                    print 'Scanning ' + record.id + '...'
+                    label = record.id
                 # split into chunks if larger than 100 Mbp
                 chunk_size = 100000000
-                if len(record.seq) > chunk_size:
-                    nb_chunks = (len(record.seq) / chunk_size) + 1
-                    chunk_size = int(len(record.seq)/nb_chunks)
-                    for chunk in range(nb_chunks):
-                        chunk_start = chunk*chunk_size
-                        if chunk == nb_chunks - 1:
-                            chunk_end = -1
-                        else:
-                            chunk_end = (chunk+1)*chunk_size
-                        if verbose and nb_chunks > 1:
-                            print 'Chunk ' + str(chunk) + '...'
-                        self.scanChunk(record.seq, verbose=verbose,
-                                       idx_start=chunk_start,
-                                       idx_end=chunk_end)
+                nb_chunks = (len(record.seq) / chunk_size) + 1
+                chunk_size = int(len(record.seq)/nb_chunks)
+                for chunk in range(nb_chunks):
+                    chunk_start = chunk*chunk_size
+                    if chunk == nb_chunks - 1:
+                        chunk_end = -1
+                    else:
+                        chunk_end = (chunk+1)*chunk_size
+                    if verbose and nb_chunks > 1:
+                        label = label + ' chunk ' + str(chunk)
+                    self.scanChunk(record.seq, verbose=verbose,
+                                   idx_start=chunk_start,
+                                   idx_end=chunk_end,
+                                   label=label)
 
-    def scanChunk(self, seq, idx_start=0, idx_end=-1, verbose=True):
+    def scanChunk(self, seq, idx_start=0, idx_end=-1, verbose=True, label=''):
         '''Scans a sequence chunk between start and end indexes.'''
         if verbose:
             # Start progress bar
-            pbar = tqdm.tqdm(total=len(seq))
+            pbar = tqdm.tqdm(total=len(seq), desc=label)
             # When to update progress
             if len(seq) < 100:
                 update_pb = 1
@@ -116,7 +116,7 @@ class SeededGuides:
                 hfs = hf['seeds/' + seed]
                 cpt = hfs.shape[1]
                 hfs.resize((1, hfs.shape[1] + len(seed_pos)))
-                hfs[0][cpt:] = seed_pos
+                hfs[0, cpt:] = seed_pos
             else:
                 hf.create_dataset('seeds/' + seed, dtype=int,
                                   shape=(1, len(seed_pos)), data=seed_pos,
@@ -162,16 +162,19 @@ class SeededGuides:
         return(nm_sum)
 
 
-# # FOR TESTING
+# FOR TESTING
 # sg = SeededGuides()
+# sg.initFile()
 # sg.scanRef('../data/smallref.fa')
 
-# sg.querySeq('ACCGTAAGATACATTTACAGCGG')
-# sg.querySeq('ATCGTAAGATACATTTACAGGGG')
+# sg.querySeq('TTAAACTTGCTATTCCATCAGGG')
 
 # hf = h5py.File(sg.file_name, 'a')
 # hf.keys()
 # hf['seqs'].shape
 # hf['seqs'][0][0]
 # len(hf['seeds'].keys())
+# pos = hf['seeds/' + hf['seeds'].keys()[1000]]
+# pos[0]
+# hf['seeds/' + hf['seeds'].keys()[1000]][0,70:80] = range(10)
 # hf.close()
