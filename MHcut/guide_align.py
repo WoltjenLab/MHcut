@@ -29,8 +29,6 @@ class SeededGuides:
         '''Scan a reference FASTA file, by chr and chunks.'''
         for record in SeqIO.parse(ref_file, "fasta"):
             if record.id in chrs:
-                if verbose:
-                    label = record.id
                 # split into chunks if larger than 100 Mbp
                 chunk_size = 100000000
                 nb_chunks = (len(record.seq) / chunk_size) + 1
@@ -42,7 +40,9 @@ class SeededGuides:
                     else:
                         chunk_end = (chunk+1)*chunk_size
                     if verbose and nb_chunks > 1:
-                        label = label + ' chunk ' + str(chunk)
+                        label = record.id + ' chunk ' + str(chunk)
+                    else:
+                        label = ''
                     self.scanChunk(record.seq, verbose=verbose,
                                    idx_start=chunk_start,
                                    idx_end=chunk_end,
@@ -136,15 +136,10 @@ class SeededGuides:
                         seq_cands[ss] += 1
                     else:
                         seq_cands[ss] = 1
-        # Keep only positions with 2 seeds
-        seqs2 = []
-        for seqid in seq_cands:
-            if seq_cands[seqid] > 1:
-                seqs2.append(seqid)
         # Align and compute number of mismatches
         nm_sum = [0, 0, 0]
         hfseqs = hf['seqs']
-        for seqid in seqs2:
+        for seqid in seq_cands.keys():
             seq = str(hfseqs[seqid][0])
             nm = 0
             for ii in range(len(seq)):
