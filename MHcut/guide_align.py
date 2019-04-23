@@ -9,13 +9,17 @@ import tqdm
 
 
 class SeededGuides:
-    def __init__(self, file_name='seededguides.hdf5', k=23, ns=3, sl=7,
-                 PAM='NGG'):
+    def __init__(self, file_name='seededguides.hdf5', k=23, nss=3, ssl=4,
+                 shift=[0, 1], smin=2, PAM='NGG'):
         self.file_name = file_name
-        self.ns = ns
-        self.sl = sl
+        self.nss = nss
+        self.ssl = ssl
+        self.smin = smin
         self.k = k
+        self.shift = shift
         self.PAM = PAM
+        self.sint = seedInt(k, ssl, nss, shift)
+        print str(len(self.sint)) + ' seeds.'
 
     def initFile(self):
         # Init HDF5 file
@@ -88,10 +92,11 @@ class SeededGuides:
                 # if aligned extract seeds for this sequence
                 if al:
                     seqs.append(seq_ii)
-                    for seedi in range(self.ns):
-                        sstart = (seedi*self.k/self.ns)
-                        seed = seq_ii[sstart:(sstart+self.sl)]
+                    seeds_ii = extractSeeds(seq_ii, self.sint)
+                    for seedi in range(len(seeds_ii)):
+                        seed = seeds_ii[seedi]
                         if seed not in seeds:
+                            # maybe add the seed id to optimize
                             seeds[seed] = [cpt]
                         else:
                             seeds[seed].append(cpt)
@@ -127,9 +132,8 @@ class SeededGuides:
         hf = h5py.File(self.file_name, 'r')
         # Unique positions of candidate sequences
         seq_cands = {}
-        for seedi in range(self.ns):
-            sstart = (seedi*self.k/self.ns)
-            seed = inseq[sstart:(sstart+self.sl)]
+        seeds = extractSeeds(inseq, self.sint)
+        for seed in seeds:
             if 'seeds/' + seed in hf:
                 for ss in hf['seeds/' + seed][0]:
                     if ss in seq_cands:
@@ -140,6 +144,8 @@ class SeededGuides:
         nm_sum = [0, 0, 0]
         hfseqs = hf['seqs']
         for seqid in seq_cands.keys():
+            if seq_cands[seqid] < self.smin:
+                continue
             seq = str(hfseqs[seqid][0])
             nm = 0
             for ii in range(len(seq)):
@@ -156,6 +162,43 @@ class SeededGuides:
         hf.close()
         return(nm_sum)
 
+
+def seedInt(k, ssl, nss, shift):
+    ssn = int(k/ssl)
+    all_ints = []
+    for sh in shift:
+        ints = []
+        for ii in range(ssn):
+            ints.append([ssl*ii+sh, ssl*(ii+1)+sh])
+        all_ints += enumInts(ints, ssn-nss)
+    return all_ints
+
+
+def enumInts(ints, n, minidx=0):
+    res = []
+    if n == 0:
+        ints_m = []
+        for ii in ints:
+            ints_m.append(ii)
+        res.append(ints_m)
+    else:
+        for exc in range(minidx, len(ints)):
+            ints_filt = []
+            for ii in range(len(ints)):
+                if ii != exc:
+                    ints_filt.append(ints[ii])
+            res += enumInts(ints_filt, n-1, exc)
+    return res
+
+
+def extractSeeds(seq, ints):
+    seeds = []
+    for ii in ints:
+        seed = ''
+        for se in ii:
+            seed += seq[se[0]:se[1]]
+        seeds.append(seed)
+    return(seeds)
 
 # FOR TESTING
 # sg = SeededGuides()
