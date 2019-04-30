@@ -185,18 +185,19 @@ def mhcut(args):
                     if args.bwa:
                         pams.alignPamsBwa(args.reffile, prefix=args.outprefix)
                     else:
-                        if args.h5file == '':
-                            pams.alignPamsBlast(args.reffile,
-                                                prefix=args.outprefix,
-                                                chunk_size=args.chunkS)
-                        else:
-                            pams.alignPamsSeededGuides(sguides)
+                        pams.alignPamsBlast(args.reffile,
+                                            prefix=args.outprefix,
+                                            chunk_size=args.chunkS)
                 else:
                     pams.alignPamsJellyfish(args.jffile, prefix=args.outprefix)
 
             # We define a unique pam if the protospacer maps exactly
             # at maximum one position in the genome.
             pams.annotateUnique(max_mm0=1)
+
+            # Align unique protospacers to get 1-2 mismatch info
+            if args.h5file != '':
+                pams.alignUniquePamsSeededGuides(sguides)
 
             # Looking for nested MH only in unique PAMs
             pams.findNestedMH(var, max_tail=args.maxTail,

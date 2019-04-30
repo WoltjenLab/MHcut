@@ -239,16 +239,20 @@ class PAMs():
                 pam.mm1 = pam.mm1 - (len(protoguides)-1) * pam.mm0
                 pam.mm2 = pam.mm2 - (len(protoguides)-1) * pam.mm1
 
-    def alignPamsSeededGuides(self, sguides):
+    def alignUniquePamsSeededGuides(self, sguides):
         '''Align protospacers and update the PAMs.'''
+        pams = []
         for pam in self.pams:
+            if pam.uniq:
+                pams.append(pam)
+        for pam in pams:
             # Init PAM values
-            pam.mm0 = 0
+            # pam.mm0 = 0  # already computed
             pam.mm1 = 0
             pam.mm2 = 0
             # If Ns in the protospacer, skip
             if 'N' in pam.proto:
-                pam.mm0 = 'NA'
+                # pam.mm0 = 'NA'  # already computed
                 pam.mm1 = 'NA'
                 pam.mm2 = 'NA'
                 continue
@@ -258,7 +262,7 @@ class PAMs():
             for pg in protoguides:
                 # Align guide
                 mm_pg = sguides.querySeq(pg)
-                pam.mm0 += mm_pg[0]
+                # pam.mm0 += mm_pg[0]  # already computed
                 pam.mm1 += mm_pg[1]
                 pam.mm2 += mm_pg[2]
             # Correct for bias due to enumerating PAMs
