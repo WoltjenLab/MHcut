@@ -36,7 +36,9 @@ def mhcut(args):
     pamseqs = args.pamseq.split(',')
 
     # Create the hdf5 file for guide alignment if necessary
-    sguides = guide_align.SeededGuides(file_name=args.h5file, PAM=pamseqs[0])
+    sguides = guide_align.SeededGuides(file_name=args.h5file, PAM=pamseqs[0],
+                                       k=23, nss=1, ssl=7, shift=[0, 1],
+                                       smin=2)
     if args.h5file != '':
         if not os.path.isfile(args.h5file):
             print "The hdf5 file for guide alignment doesn't exist."

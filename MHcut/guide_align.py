@@ -9,7 +9,7 @@ import tqdm
 
 
 class SeededGuides:
-    def __init__(self, file_name='seededguides.hdf5', k=23, nss=3, ssl=4,
+    def __init__(self, file_name='seededguides.hdf5', k=23, nss=1, ssl=7,
                  shift=[0, 1], smin=2, PAM='NGG'):
         self.file_name = file_name
         self.nss = nss
