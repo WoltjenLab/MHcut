@@ -10,7 +10,7 @@ def main():
         description='Find regions with microhomology and a cut position.')
     parser.add_argument('-ref', dest='reffile', required=True,
                         help='the reference genome fasta file. Required.')
-    parser.add_argument('-var', dest='varfile', default='',
+    parser.add_argument('-var', dest='varfile', default='', required=True,
                         help='the file with the variants location '
                         '(BED-TSV format with header).')
     parser.add_argument('-jf', dest='jffile', default='', required=True,
