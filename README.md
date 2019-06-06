@@ -1,4 +1,4 @@
-# MHcut
+a# MHcut
 
 - Results on deletions from dbSNP and ClinVar available online through the [MHcut Browser](https://mhcut-browser.genap.ca/).
 
@@ -13,7 +13,13 @@ For each flank the microhomology is extended until the end of the variant as lon
 - first base is a match.
 - no 2 consecutive mismatches.
 
-The MH can be chosen from 2 flanks. MHcut uses a score to choose the "best" flank. 
+Two flanking configurations exists: outer-inner (1) and inner-outer (2).
+If flank1-variant-flank2, configuration 1 is MH between flank1 and variant, configuration 2 is MH between flank2 and variant. 
+In other words:
+- Outer-inner: MH between 3' variant sequence and 5' flanking sequence.
+- Inner-outer: MH between 5' variant sequence and 3' flanking sequence.
+
+MHcut uses a score to choose the "best" flank. 
 The score is currently the number of matches + number of consecutive first matches.
 In the example above, *Flank 1* is chosen (score: 9 vs 8).
 
@@ -38,15 +44,14 @@ In the example above, the first valid cut is between the G and C, and the last v
 
 PAM cuts are enumerated in both strands. For each valid cut, the protospacer sequence is retrieved.
 
-Protospacers are blasted to the genome and the top 5 positions are parsed. *mm0* represents the number of position with full alignment and no mismatch. If *mm0* is equal to one, i.e. a unique match in the genome, the PAM cut is kept.
+Protospacers are checked against the genome to count the number of exact matches: *mm0* represents the number of position with full alignment and no mismatch. 
+If *mm0* is equal to one, i.e. a unique match in the genome, the PAM is considered *unique*.
 
 For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
 Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
 Among other, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
 
-**Something about inDelphi.**
-
-**Explain that variant-level estimate of nested MH and indelphi are based on unique PAM.**
+Each protospacer/cut is also tested with [inDelphi](https://indelphi.giffordlab.mit.edu/) to provide predictions of the frequency of the desired deletion.
 
 ## Install
 
@@ -68,7 +73,7 @@ pip install . ## add --user if you don't have root
 
 If using pip install `--user` make sure to add `/home/$(whoami)/.local/bin` to your `$PATH` if you want to run the MHcut script.
 
-You will also need **either** [Blast](http://bitly.com/1zTP2u6) or [JellyFish](http://www.genome.umd.edu/jellyfish.html).
+You will also need [JellyFish](http://www.genome.umd.edu/jellyfish.html).
 Follow the links or find [more information below](#install-dependencies).
 
 These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
@@ -90,26 +95,13 @@ MHcut -ref hg38.fa
 
 Otherwise this indexing will be done automatically the first time that MHcut is run (might take a few extra minutes).
 
-By default MHcut uses BLAST to test if the protospacer sequence is unique in the genome. 
-As a faster alternative, it can also use JellyFish to search for exact matches in the genome.
+### Preparing the JellyFish index
 
-### Using BLAST
-
-To build the BLAST database:
+JellyFish finds exact matches in a genomes.
+To count 23-mers in the reference genome in both strands:
 
 ```sh
-makeblastdb -in hg38.fa -dbtype nucl -title hg38
-```
-
-The files produced will be used automatically when providing the reference genome using `-ref` (see Usage below).
-
-### Using JellyFish
-
-JellyFish is a much faster alternative but can only find exact matches.
-To count 23-mers in the reference genome:
-
-```sh
-jellyfish count -m 23 -s 100M hg38.fa
+jellyfish count --out-counter-len 1 -C -m 23 -s 100M hg38.fa
 ```
 
 Note: Use `-t` to use multiple cores, e.g. `-t 10` to use 10 cores.
@@ -119,18 +111,18 @@ The output file `mer_counts.jf` will later be given to MHcut using `-jf` (see Us
 ## Usage
 
 ```sh
-MHcut -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -out MHcut-NCBI-chrX
+MHcut -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -jf mer_counts.jf -out MHcut-NCBI-chrX
 ```
 
 The required parameters are:
 
 - *-var* a TAB delimited file starting with chr/start/end columns and then whatever else (e.g. rsid, gene). The first row contains the column names.
-- *-ref* a fasta file with the reference genome. It must be indexed and prepared for Blast (see previous section).
+- *-ref* a fasta file with the reference genome.
+- *-jf* the 23-mers count file created by JellyFish. 
 - *-out* the prefix for the output files (TSV files). 
 
 Other optional parameters:
 
-- *-jf* the 23-mers count file created by JellyFish. If provided, JellyFish will be used to test protospacer uniqueness instead of BLAST.
 - *-minvarL* the minimum length for a variant to be considered. Default is `3`.
 - *-minMHL* the minimum length of the MH. Default is `3`.
 - *-minm1L* the minimum length of the first stretch if the microhomology. Default is `3`.
@@ -143,7 +135,6 @@ Other optional parameters:
 - *-minLnhm* the minimum length of nested MH to be considered in the nested MH check. Default is `3`.
 - *-2fls* report results for both flank configurations instead of the one with strongest MH.
 - *-noShift* use input coordinates without trying to shift the variant to find the best MH.
-- *-chunkS* if using BLAST, the number of PAMs per chunks. Default: 30. Pick lower value if BLAST uses too much memory.
 
 
 
@@ -156,6 +147,7 @@ Named `PREFIX-variants.tsv`, the "variant" file  has one line per input variant 
 Currently the columns of the output are:
 
 - The columns of the input `.tsv` file. For example: *chr*, *start*, *end*, *rsid*, *gene*.
+- *flank*/*mhScore* the flank configuration (1:outer-inner, 2:inner-outer) and MH score ("Microhomology search" above).
 - *mhL*: MH length.
 - *mh1L*: number of first consecutive matches.
 - *hom*: proportion of matches.
@@ -170,21 +162,19 @@ Currently the columns of the output are:
 - *guidesNoNMH*: the number of guides that have no nested MH.
 - *guidesMinNMH*: the number of nested MH for the guide which have the least amount of nested MH.
 - *max2cutsDist*: the distance between the two unique cuts the furthest from each other. *NA* if *pamUniq*<2.
-- *maxInDelphiFreqmESC*,*maxInDelphiFreqU2OS*,*maxInDelphiFreqHEK293*,*maxInDelphiFreqHCT116*,*maxInDelphiFreqK562*: the maximum frequency predicted by inDelphi for this exact deletion (across all the unique cuts) for different cell types. 
+- *maxInDelphiFreqmESC*,*maxInDelphiFreqU2OS*,*maxInDelphiFreqHEK293*,*maxInDelphiFreqHCT116*,*maxInDelphiFreqK562*: the maximum frequency predicted by inDelphi for this exact deletion for different cell types. 
+- *maxInDelphiFreqMean* the maximum average frequency predicted by inDelphi for this exact deletion (average across the different cell types).
 
 ### The "guide" file
 
 Named `PREFIX-guides.tsv`, the "guide" file has one line per protospacer. 
 This means that the same variant can be present several times if several valid PAM cuts are available. 
-Only valid protospacers are returned, i.e. between micro-homologies and unique in the genome.
 
 Currently the columns of the output are the same as for the "variant" file with the following additional columns:
 
-- *protospacer* the sequence of the protospacer.
+- *protospacer*/*protoStrand* the sequence and strand of the protospacer.
 - *pamSeq* the PAM.
 - *mm0* the number of position in the genome where the sequence align with no mismatches.
-- *mm1* the number of position in the genome where the sequence align with 1 mismatches.
-- *mm2* the number of position in the genome where the sequence align with 2 mismatches.
 - *m1Dist1* and *m1Dist2*: the distance between the PAM cut the left or right stretch of perfect match, respectively.
 - *mhDist1* and *mhDist2*: the distance between the PAM cut the left or right micro-homology, respectively.
 - *nbNMH* the number of nested MH.
@@ -195,6 +185,7 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *nmhGC* the GC content of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 - *nmhSeq* the sequence of the best **n**ested **m**icro-**h**omology MH (best defined as the highest MMEJ score).
 - *inDelphiFreqmESC*,*inDelphiFreqU2OS*,*inDelphiFreqHEK293*,*inDelphiFreqHCT116*,*inDelphiFreqK562*: the frequency predicted by inDelphi for this exact deletion. 
+- *inDelphiFreqMean*: the average frequency predicted by inDelphi for this exact deletion across the different cell types. 
 
 ### The "cartoon" file
 
@@ -220,25 +211,6 @@ GGGCCGCGATGTGCAGGGCC
 ```
 
 ## Install dependencies
-
-### Blast
-
-On **OSX**, download the *.dmg* executable [here](http://bitly.com/1zTP2u6).
-
-On **Ubuntu**, `sudo apt-get install ncbi-blast+`.
-
-More generally on **linux**, you can also download the executable, decompress it and update your PATH to include the folder with the binary.
-For example if you want to put it a folder `~/soft`:
-
-```sh
-mkdir -p ~/soft
-cd ~/soft
-wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz
-tar -xzvf ncbi-blast-2.7.1+-x64-linux.tar.gz
-export PATH=~/soft/ncbi-blast-2.7.1+/bin:$PATH
-```
-
-*Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
 
 ### JellyFish
 

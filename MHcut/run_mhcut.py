@@ -13,6 +13,8 @@ def main():
     parser.add_argument('-var', dest='varfile', default='',
                         help='the file with the variants location '
                         '(BED-TSV format with header).')
+    parser.add_argument('-jf', dest='jffile', default='', required=True,
+                        help='the jellyfish file of the reference genome.')
     parser.add_argument('-out', dest='outprefix', default='mhcutres',
                         help='the prefix for the output files. '
                         'Default: "mhcutres".')
@@ -28,8 +30,6 @@ def main():
 
     # Parameters related to protospacer alignment
     align_pars = parser.add_argument_group('Protospacer alignment')
-    align_pars.add_argument('-jf', dest='jffile', default='',
-                            help='the jellyfish file of the reference genome.')
     align_pars.add_argument('-chunkS', type=int, default=30,
                             help='if using BLAST, the number of PAMs per '
                             'chunks. Default: 30. Pick lower value if BLAST '

@@ -182,12 +182,12 @@ def mhcut(args):
                               uniq_pam_only=False)
 
             if args.indelphi:
-                # Running inDelphi only for unique PAMs
+                # Running inDelphi
                 pams.inDelphi(idmodels, var, uniq_pam_only=False)
 
             # Write variant output line
             voutline = '\t'.join([input_line_raw, str(var.vsize),
-                                 var_fl.toString(True),
+                                  var_fl.toString(flank_info=True),
                                   pams.toStringVariants()])
             variant_outfile.write(voutline + '\n')
 

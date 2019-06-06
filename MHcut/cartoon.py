@@ -71,13 +71,13 @@ def drawCartoon(var, var_fl, pams, max_tail=50):
                 out_lines_trimmed.append(line)
         out_lines = out_lines_trimmed
     # Cartoon: protospacers sequence
-    if len(pams_uniq) > 0:
-        proto_head = 'Protospacers, m1Dist1, m1Dist2, mhDist1, '
-        proto_head += 'mhDist2, bestOffTarget:'
-        out_lines.append(proto_head)
-        for pam in pams_uniq:
-            coutline = '\t'.join([pam.proto, str(pam.m1Dist1),
-                                  str(pam.m1Dist2), str(pam.mhDist1),
-                                  str(pam.mhDist2), str(pam.bnmh_seq)])
-            out_lines.append(coutline)
+    # if len(pams_uniq) > 0:
+    #     proto_head = 'Protospacers, m1Dist1, m1Dist2, mhDist1, '
+    #     proto_head += 'mhDist2, bestOffTarget:'
+    #     out_lines.append(proto_head)
+    #     for pam in pams_uniq:
+    #         coutline = '\t'.join([pam.proto, str(pam.m1Dist1),
+    #                               str(pam.m1Dist2), str(pam.mhDist1),
+    #                               str(pam.mhDist2), str(pam.bnmh_seq)])
+    #         out_lines.append(coutline)
     return('\n'.join(out_lines) + '\n')

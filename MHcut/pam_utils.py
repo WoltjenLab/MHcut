@@ -42,6 +42,7 @@ class PAM():
         self.indelphi_HEK293 = 'NA'
         self.indelphi_HCT116 = 'NA'
         self.indelphi_K562 = 'NA'
+        self.indelphi_mean = 'NA'
 
 
 class PAMs():
@@ -63,6 +64,7 @@ class PAMs():
         self.max_indelphi_HEK293 = 'NA'
         self.max_indelphi_HCT116 = 'NA'
         self.max_indelphi_K562 = 'NA'
+        self.max_indelphi_mean = 'NA'
 
     def findPAMs(self, var_fl, pamseq, cut_offset, max_tail):
         '''Looks for PAM for a PAM sequence and cut offset.'''
@@ -360,14 +362,10 @@ class PAMs():
     def inDelphi(self, idmodels, var, uniq_pam_only=False):
         '''Run inDelphi to predict repair outcome.'''
         pams = []
-        nuniq = 0
         for pam in self.pams:
-            if pam.uniq:
-                nuniq += 1
-            else:
+            if not pam.uniq and uniq_pam_only:
                 # If we want only unique PAMs, skip
-                if uniq_pam_only:
-                    continue
+                continue
             pams.append(pam)
         # Prepare input and target sequences
         full_seq = var.fl1seq + var.varseq + var.fl2seq
@@ -379,13 +377,14 @@ class PAMs():
         if 'N' in full_seq:
             return()
         # Otherwise, we init the info and go over the cuts
-        if nuniq > 0:
+        if len(pams) > 0:
             # Init frequencies to 0
             self.max_indelphi_mESC = 0
             self.max_indelphi_U2OS = 0
             self.max_indelphi_HEK293 = 0
             self.max_indelphi_HCT116 = 0
             self.max_indelphi_K562 = 0
+            self.max_indelphi_mean = 0
         # For each PAM, run inDelphi and update PAM/variant stats
         for pam in pams:
             # Init frequencies to 0
@@ -394,6 +393,7 @@ class PAMs():
             pam.indelphi_HEK293 = 0
             pam.indelphi_HCT116 = 0
             pam.indelphi_K562 = 0
+            pam.indelphi_mean = 0
             # Prepare cut position and sequences
             if pam.strand == '-':
                 cut_pos = len(full_seq) - pam.cutPosition - 1
@@ -404,6 +404,7 @@ class PAMs():
                 delphi_input = full_seq
                 delphi_comp = target_seq
             # Run inDelphi
+            mean_cpt = 0
             for ct in idmodels:
                 pred_df, stats = inDelphi.inDelphi.predict(idmodels[ct],
                                                            delphi_input,
@@ -413,6 +414,8 @@ class PAMs():
                 for row in pred_df.iterrows():
                     if row[1]['Genotype'] == delphi_comp:
                         pfreq = round(row[1]['Predicted frequency'], 3)
+                        pam.indelphi_mean += pfreq
+                        mean_cpt += 1
                         if ct == 'mESC':
                             pam.indelphi_mESC = pfreq
                         if ct == 'U2OS':
@@ -423,32 +426,30 @@ class PAMs():
                             pam.indelphi_HCT116 = pfreq
                         if ct == 'K562':
                             pam.indelphi_K562 = pfreq
-            # Update variant-level stats if PAM is unique
-            if pam.uniq:
-                self.max_indelphi_mESC = max(self.max_indelphi_mESC,
-                                             pam.indelphi_mESC)
-                self.max_indelphi_U2OS = max(self.max_indelphi_U2OS,
-                                             pam.indelphi_U2OS)
-                self.max_indelphi_HEK293 = max(self.max_indelphi_HEK293,
-                                               pam.indelphi_HEK293)
-                self.max_indelphi_HCT116 = max(self.max_indelphi_HCT116,
-                                               pam.indelphi_HCT116)
-                self.max_indelphi_K562 = max(self.max_indelphi_K562,
-                                             pam.indelphi_K562)
+            pam.indelphi_mean = pam.indelphi_mean / mean_cpt
+            # Update variant-level stats
+            self.max_indelphi_mESC = max(self.max_indelphi_mESC,
+                                         pam.indelphi_mESC)
+            self.max_indelphi_U2OS = max(self.max_indelphi_U2OS,
+                                         pam.indelphi_U2OS)
+            self.max_indelphi_HEK293 = max(self.max_indelphi_HEK293,
+                                           pam.indelphi_HEK293)
+            self.max_indelphi_HCT116 = max(self.max_indelphi_HCT116,
+                                           pam.indelphi_HCT116)
+            self.max_indelphi_K562 = max(self.max_indelphi_K562,
+                                         pam.indelphi_K562)
+            self.max_indelphi_mean = max(self.max_indelphi_mean,
+                                         pam.indelphi_mean)
 
     def findNestedMH(self, var, max_tail=50, min_l_nmh=3,
                      uniq_pam_only=False):
         '''Look for nested MH for each valid cut.'''
         # Search for other MH that could be used by the MMEJ
         pams = []
-        nuniq = 0
         for pam in self.pams:
-            if pam.uniq:
-                nuniq += 1
-            else:
+            if not pam.uniq and uniq_pam_only:
                 # If we want only unique PAMs, skip
-                if uniq_pam_only:
-                    continue
+                continue
             pams.append(pam)
         # Look for nested MH on variants that are small enough
         if len(pams) > 0 and var.vsize < max_tail*2:
@@ -481,19 +482,18 @@ class PAMs():
                             pam.bnmh_vsize = data['vsize']
                             pam.bnmh_gc = round(data['gc'], 3)
                             pam.bnmh_seq = data['seq']
-                if pam.uniq:
-                    # Update global info
-                    # Number of PAMs with no nested MH
-                    if self.no_offtargets == 'NA':
-                        self.no_offtargets = 0
-                    if pam.nmh_nb == 0:
-                        self.no_offtargets += 1
-                    # Number of nested MH in the PAM with the least
-                    if self.min_offtargets == 'NA':
-                        self.min_offtargets = pam.nmh_nb
-                    else:
-                        self.min_offtargets = min(self.min_offtargets,
-                                                  pam.nmh_nb)
+                # Update variant-level info
+                # Number of PAMs with no nested MH
+                if self.no_offtargets == 'NA':
+                    self.no_offtargets = 0
+                if pam.nmh_nb == 0:
+                    self.no_offtargets += 1
+                # Number of nested MH in the PAM with the least
+                if self.min_offtargets == 'NA':
+                    self.min_offtargets = pam.nmh_nb
+                else:
+                    self.min_offtargets = min(self.min_offtargets,
+                                              pam.nmh_nb)
 
     def toStringVariants(self):
         '''The relevant string to write in the "variants" output.'''
@@ -506,7 +506,8 @@ class PAMs():
         # Create string to output
         tostr = [self.nbPAMs(), pams_uniq, self.no_offtargets,
                  self.min_offtargets, self.getMax2cutsDist(),
-                 self.max_indelphi_mESC, self.max_indelphi_U2OS,
+                 self.max_indelphi_mean, self.max_indelphi_mESC,
+                 self.max_indelphi_U2OS,
                  self.max_indelphi_HEK293, self.max_indelphi_HCT116,
                  self.max_indelphi_K562]
         tostr = '\t'.join([str(ii) for ii in tostr])
@@ -521,11 +522,11 @@ class PAMs():
             if uniq_pam_only and not pam.uniq:
                 continue
             # Create string to output for this guide
-            pam_str = [pam.proto, pam.pamseq, pam.mm0, pam.mm1, pam.mm2,
+            pam_str = [pam.proto, pam.strand, pam.pamseq, pam.mm0,
                        pam.m1Dist1, pam.m1Dist2, pam.mhDist1,  pam.mhDist2,
                        pam.nmh_nb, pam.nmh_maxL, pam.bnmh_score, pam.bnmh_size,
                        pam.bnmh_vsize, pam.bnmh_gc, pam.bnmh_seq,
-                       pam.indelphi_mESC, pam.indelphi_U2OS,
+                       pam.indelphi_mean, pam.indelphi_mESC, pam.indelphi_U2OS,
                        pam.indelphi_HEK293, pam.indelphi_HCT116,
                        pam.indelphi_K562]
             pam_str = '\t'.join([str(ii) for ii in pam_str])
@@ -540,7 +541,7 @@ def headersVariants(NAs=False):
     '''
     # IF YOU CHANGE SOMETHING HERE, CHANGE THE toStringVariants TOO (above)
     headers = ['pamMot', 'pamUniq', 'guidesNoNMH', 'guidesMinNMH',
-               'max2cutsDist', 'maxInDelphiFreqmESC',
+               'max2cutsDist', 'maxInDelphiFreqmESC', 'maxInDelphiFreqMean',
                'maxInDelphiFreqU2OS', 'maxInDelphiFreqHEK293',
                'maxInDelphiFreqHCT116', 'maxInDelphiFreqK562']
     # Should it returns NAs instead of the headers
@@ -557,8 +558,10 @@ def headersGuides():
     "toStringGuides" output.
     '''
     # IF YOU CHANGE SOMETHING HERE, CHANGE THE toStringGuides TOO (above)
-    return ['protospacer', 'pamSeq', 'mm0', 'mm1', 'mm2', 'm1Dist1', 'm1Dist2',
+    return ['protospacer', 'protoStrand', 'pamSeq',
+            'mm0', 'm1Dist1', 'm1Dist2',
             'mhDist1', 'mhDist2', 'nbNMH', 'largestNMH', 'nmhScore', 'nmhSize',
-            'nmhVarL', 'nmhGC', 'nmhSeq', 'inDelphiFreqmESC',
+            'nmhVarL', 'nmhGC', 'nmhSeq', 'inDelphiFreqMean',
+            'inDelphiFreqmESC',
             'inDelphiFreqU2OS', 'inDelphiFreqHEK293', 'inDelphiFreqHCT116',
             'inDelphiFreqK562']
