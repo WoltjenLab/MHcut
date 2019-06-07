@@ -404,7 +404,6 @@ class PAMs():
                 delphi_input = full_seq
                 delphi_comp = target_seq
             # Run inDelphi
-            mean_cpt = 0
             for ct in idmodels:
                 pred_df, stats = inDelphi.inDelphi.predict(idmodels[ct],
                                                            delphi_input,
@@ -414,8 +413,6 @@ class PAMs():
                 for row in pred_df.iterrows():
                     if row[1]['Genotype'] == delphi_comp:
                         pfreq = round(row[1]['Predicted frequency'], 3)
-                        pam.indelphi_mean += pfreq
-                        mean_cpt += 1
                         if ct == 'mESC':
                             pam.indelphi_mESC = pfreq
                         if ct == 'U2OS':
@@ -426,7 +423,10 @@ class PAMs():
                             pam.indelphi_HCT116 = pfreq
                         if ct == 'K562':
                             pam.indelphi_K562 = pfreq
-            pam.indelphi_mean = pam.indelphi_mean / mean_cpt
+            pam.indelphi_mean = pam.indelphi_mESC + pam.indelphi_U2OS
+            pam.indelphi_mean += pam.indelphi_HEK293
+            pam.indelphi_mean += pam.indelphi_HCT116 + pam.indelphi_K562
+            pam.indelphi_mean = pam.indelphi_mean / 5
             # Update variant-level stats
             self.max_indelphi_mESC = max(self.max_indelphi_mESC,
                                          pam.indelphi_mESC)
