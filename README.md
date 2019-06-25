@@ -135,6 +135,7 @@ Other optional parameters:
 - *-minLnhm* the minimum length of nested MH to be considered in the nested MH check. Default is `3`.
 - *-2fls* report results for both flank configurations instead of the one with strongest MH.
 - *-noShift* use input coordinates without trying to shift the variant to find the best MH.
+- *-restart* will check for existing output files and continue from the variant (useful when long jobs hit walltime).
 
 
 

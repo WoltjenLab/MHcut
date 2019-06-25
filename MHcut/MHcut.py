@@ -36,11 +36,6 @@ def mhcut(args):
         print "Run 'MHcut -h' for more info."
         sys.exit(0)
 
-    # Open connection to output files
-    variant_outfile = open(args.outprefix + '-variants.tsv', 'w')
-    guide_outfile = open(args.outprefix + '-guides.tsv', 'w')
-    cartoon_outfile = open(args.outprefix + '-cartoons.tsv', 'w')
-
     # Open connection to input file
     variant_input_file = open(args.varfile, 'r')
 
@@ -59,10 +54,33 @@ def mhcut(args):
     outhead = inhead + '\tvarL'
     outhead += '\t' + '\t'.join(flanks.headers(flank_info=True))
     outhead += '\t' + '\t'.join(pam_utils.headersVariants())
-    variant_outfile.write(outhead + '\n')
     gouthead = outhead + '\t' + '\t'.join(pam_utils.headersGuides())
-    guide_outfile.write(gouthead + '\n')
-    cartoon_outfile.write(outhead + '\n\n')
+
+    # If restart mode: read variant output file and save last line
+    in_nbcols = len(inhead.split('\t'))
+    last_line = inhead
+    skip_line = False
+    write_mode = 'w'
+    if args.restart and os.path.isfile(args.outprefix + '-variants.tsv'):
+        cpt = 0
+        variant_outfile = open(args.outprefix + '-variants.tsv', 'r')
+        for line in variant_outfile:
+            cpt += 1
+        variant_outfile.close()
+        print 'Restart mode: {} input lines will be skipped.'.format(cpt)
+        line = line.rstrip().split('\t')
+        last_line = '\t'.join(line[:in_nbcols])
+        skip_line = True
+        write_mode = 'a'
+
+    # Open connection to output files
+    variant_outfile = open(args.outprefix + '-variants.tsv', write_mode)
+    guide_outfile = open(args.outprefix + '-guides.tsv', write_mode)
+    cartoon_outfile = open(args.outprefix + '-cartoons.tsv', write_mode)
+    if not skip_line:
+        variant_outfile.write(outhead + '\n')
+        guide_outfile.write(gouthead + '\n')
+        cartoon_outfile.write(outhead + '\n\n')
 
     # Init inDelphi model if necessary
     idmodels = {}
@@ -81,8 +99,15 @@ def mhcut(args):
     # Read each line of the input file
     line_cpt = 0
     for input_line in variant_input_file:
+        # Update progress bar every couple of variants
+        line_cpt += 1
+        if line_cpt % update_pb == 0:
+            pbar.update(update_pb)
         # Parse line from the variant input
         input_line_raw = input_line.rstrip('\n')
+        if skip_line:
+            skip_line = input_line_raw != last_line
+            continue
         input_line = input_line_raw.split('\t')
         vstart = int(input_line[1])
         vend = int(input_line[2])
@@ -185,26 +210,23 @@ def mhcut(args):
                 # Running inDelphi
                 pams.inDelphi(idmodels, var, uniq_pam_only=False)
 
-            # Write variant output line
+            # Prepare variant output line
             voutline = '\t'.join([input_line_raw, str(var.vsize),
                                   var_fl.toString(flank_info=True),
                                   pams.toStringVariants()])
-            variant_outfile.write(voutline + '\n')
 
-            # Write guides output lines
+            # Prepare guides output lines
             goutline = pams.toStringGuides(voutline=voutline,
                                            uniq_pam_only=False)
-            guide_outfile.write(goutline)
 
-            # Write the cartoon
+            # Write the cartoon and other files
             cartoon_outfile.write(voutline + '\n')
             cartoon_outfile.write(cartoon.drawCartoon(var, var_fl, pams,
                                                       max_tail=args.maxTail))
             cartoon_outfile.write('\n\n')
-        # Update progress bar every couple of variants
-        line_cpt += 1
-        if line_cpt % update_pb == 0:
-            pbar.update(update_pb)
+            guide_outfile.write(goutline)
+            variant_outfile.write(voutline + '\n')
+            # variant output last to make sure restart mode works.
 
     # Update and close progress bar
     if pbar.total > pbar.last_print_n:

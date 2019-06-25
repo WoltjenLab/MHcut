@@ -27,6 +27,9 @@ def main():
                         'shift the variant to find the best MH')
     parser.add_argument('-v0', dest='v0', action='store_true',
                         help='use older version.')
+    parser.add_argument('-restart', dest='restart', action='store_true',
+                        help='restart mode. Will skip variants already in'
+                        ' output and append new output.')
 
     # Parameters related to protospacer alignment
     align_pars = parser.add_argument_group('Protospacer alignment')
