@@ -9,6 +9,8 @@ library(magrittr)  # pipes (e.g. %>%)
 ## For tables
 library(knitr)
 
+library(ggplot2)
+library(ggwaffle)
 library(GenomicRanges)
 
 ## Read the first row (headers) to remind us the order of each column
@@ -68,7 +70,7 @@ snps = subset(snps, !(RS %in% paste0("rs", var.s$RS)))
 dim(snps)
 ```
 
-    ## [1] 15174576        6
+    ## [1] 15174509        6
 
 ``` r
 snps = makeGRangesFromDataFrame(snps, keep.extra.columns = TRUE)
@@ -78,22 +80,37 @@ Overlap
 -------
 
 ``` r
-sum.df = lapply(unique(snps$vtype), function(vt) {
-    fl.gr$snp.ol = overlapsAny(fl.gr, subset(snps, vtype == vt))
-    fl.id = fl.gr %>% as.data.frame %>% group_by(id) %>% summarize(snp.ol = any(snp.ol))
-    fl.id %>% ungroup %>% summarize(prop.ol = mean(snp.ol)) %>% mutate(vtype = vt)
-})
-sum.df = do.call(rbind, sum.df)
+fl.gr$snp.ol = overlapsAny(fl.gr, subset(snps, vtype == "single"))
+fl.gr$indel.ol = overlapsAny(fl.gr, subset(snps, vtype == "deletion" | vtype == 
+    "insertion"))
 
-sum.df %>% arrange(desc(prop.ol)) %>% kable
+fl.id = fl.gr %>% as.data.frame %>% group_by(id) %>% summarize(snp.ol = any(snp.ol), 
+    indel.ol = any(indel.ol)) %>% mutate(class = ifelse(snp.ol, "SNP only", 
+    "none"), class = ifelse(indel.ol, "indel only", class), class = ifelse(snp.ol & 
+    indel.ol, "SNP and indel", class), classf = factor(class, levels = c("SNP only", 
+    "indel only", "SNP and indel", "none"))) %>% arrange(classf)
+
+fl.id %>% group_by(classf) %>% summarize(n = n()) %>% ungroup %>% mutate(prop = n/sum(n)) %>% 
+    select(-n) %>% kable
 ```
 
-|    prop.ol| vtype          |
-|----------:|:---------------|
-|  0.0880993| deletion       |
-|  0.0824078| single         |
-|  0.0151773| insertion      |
-|  0.0034386| in-del         |
-|  0.0021738| microsatellite |
-|  0.0000000| mnp            |
-|  0.0000000| named          |
+| classf        |       prop|
+|:--------------|----------:|
+| SNP only      |  0.0699637|
+| indel only    |  0.0851986|
+| SNP and indel |  0.0129693|
+| none          |  0.8318684|
+
+``` r
+prop.ss = 400/nrow(fl.id)
+waffle_data <- fl.id %>% group_by(classf) %>% sample_n(round(n() * prop.ss)) %>% 
+    waffle_iron(aes_d(group = classf), rows = 20) %>% mutate(group = factor(group, 
+    levels = 1:4, labels = c("SNP only", "indel only", "SNP and indel", "none")))
+
+ggplot(waffle_data, aes(x, y, fill = group)) + geom_waffle() + coord_equal() + 
+    scale_fill_brewer(name = "variant with MH region overlapping", palette = "Set1") + 
+    theme_waffle() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), 
+    legend.position = "bottom")
+```
+
+![](SNPOverlap_files/figure-markdown_github/ol-1.png)
