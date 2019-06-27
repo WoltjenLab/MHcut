@@ -22,6 +22,7 @@ library(knitr)
 
 library(ggplot2)
 library(ggwaffle)
+library(RColorBrewer)
 library(GenomicRanges)
 
 ## Read the first row (headers) to remind us the order of each column
@@ -89,10 +90,12 @@ waffle_data <- fl.id %>% group_by(classf) %>% sample_n(round(n()*prop.ss)) %>%
   waffle_iron(aes_d(group = classf), rows=20) %>%
   mutate(group=factor(group, levels=1:4, labels=c('SNP only', 'indel only', 'SNP and indel', 'none')))
 
+w.pal = c(brewer.pal(8, 'Set1')[c(1,2,4)], 'white')
+
 ggplot(waffle_data, aes(x, y, fill = group)) +
-  geom_waffle() +
+  geom_waffle(color='black', size=.2) +
   coord_equal() +
-  scale_fill_brewer(name='variant with MH region overlapping', palette='Set1') +
+  scale_fill_manual(name='variant with MH region overlapping', values=w.pal) +
   theme_waffle() +
   theme(axis.title.x=element_blank(), axis.title.y=element_blank(), legend.position='bottom')
 ```

@@ -11,6 +11,7 @@ library(knitr)
 
 library(ggplot2)
 library(ggwaffle)
+library(RColorBrewer)
 library(GenomicRanges)
 
 ## Read the first row (headers) to remind us the order of each column
@@ -70,7 +71,7 @@ snps = subset(snps, !(RS %in% paste0("rs", var.s$RS)))
 dim(snps)
 ```
 
-    ## [1] 15174509        6
+    ## [1] 15174553        6
 
 ``` r
 snps = makeGRangesFromDataFrame(snps, keep.extra.columns = TRUE)
@@ -96,10 +97,10 @@ fl.id %>% group_by(classf) %>% summarize(n = n()) %>% ungroup %>% mutate(prop = 
 
 | classf        |       prop|
 |:--------------|----------:|
-| SNP only      |  0.0699637|
-| indel only    |  0.0851986|
-| SNP and indel |  0.0129693|
-| none          |  0.8318684|
+| SNP only      |  0.0677609|
+| indel only    |  0.0885415|
+| SNP and indel |  0.0129050|
+| none          |  0.8307926|
 
 ``` r
 prop.ss = 400/nrow(fl.id)
@@ -107,10 +108,12 @@ waffle_data <- fl.id %>% group_by(classf) %>% sample_n(round(n() * prop.ss)) %>%
     waffle_iron(aes_d(group = classf), rows = 20) %>% mutate(group = factor(group, 
     levels = 1:4, labels = c("SNP only", "indel only", "SNP and indel", "none")))
 
-ggplot(waffle_data, aes(x, y, fill = group)) + geom_waffle() + coord_equal() + 
-    scale_fill_brewer(name = "variant with MH region overlapping", palette = "Set1") + 
-    theme_waffle() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), 
-    legend.position = "bottom")
+w.pal = c(brewer.pal(8, "Set1")[c(1, 2, 4)], "white")
+
+ggplot(waffle_data, aes(x, y, fill = group)) + geom_waffle(color = "black", 
+    size = 0.2) + coord_equal() + scale_fill_manual(name = "variant with MH region overlapping", 
+    values = w.pal) + theme_waffle() + theme(axis.title.x = element_blank(), 
+    axis.title.y = element_blank(), legend.position = "bottom")
 ```
 
 ![](SNPOverlap_files/figure-markdown_github/ol-1.png)
