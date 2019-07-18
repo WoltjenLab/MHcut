@@ -541,7 +541,7 @@ def headersVariants(NAs=False):
     '''
     # IF YOU CHANGE SOMETHING HERE, CHANGE THE toStringVariants TOO (above)
     headers = ['pamMot', 'pamUniq', 'guidesNoNMH', 'guidesMinNMH',
-               'max2cutsDist', 'maxInDelphiFreqmESC', 'maxInDelphiFreqMean',
+               'max2cutsDist', 'maxInDelphiFreqMean', 'maxInDelphiFreqmESC',
                'maxInDelphiFreqU2OS', 'maxInDelphiFreqHEK293',
                'maxInDelphiFreqHCT116', 'maxInDelphiFreqK562']
     # Should it returns NAs instead of the headers
