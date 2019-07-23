@@ -1,6 +1,16 @@
-a# MHcut
+# MHcut
 
-- Results on deletions from dbSNP and ClinVar available online through the [MHcut Browser](https://mhcut-browser.genap.ca/).
+MHcut was run on deletions from dbSNP and ClinVar. 
+The results can be explored online through the [MHcut Browser](https://mhcut-browser.genap.ca/).
+
+- [Methods](#methods)
+- [Installation](#installation)
+- [Preparing the reference genome](#preparing-the-reference-genome)
+- [Usage](#usage)
+- [Output](#output)
+- [Install dependencies](#install-dependencies)
+
+# Methods
 
 ## Microhomology search
 
@@ -35,32 +45,39 @@ For example, in the previous example, the following representation has a better 
 
 ## PAM cut search
 
-                         |||x|||        |||x|||
-	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGGTGTTGTCGTTGACGTC
+                         ||||x||        ||||x||
+	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGCAGTTGTCGTTGACGTC
 	                        <---------->
 
 PAM cuts are searched between the end of the first exact match stretch of the MH and the variant boundary. 
+In addition, a PAM cut is allowed to be within the MH region if after the first 3 positions. 
 In the example above, the first valid cut is between the G and C, and the last valid cut between the C and G.
 
-PAM cuts are enumerated in both strands. For each valid cut, the protospacer sequence is retrieved.
+We consider only PAMs that result in the a cut at less than 50 bp from the variant's breakpoints. 
+This can be changed with the `-maxTail` parameter (see [Usage](#usage)).
+It saves time by skipping PAMs in the middle of large deletions, as they couldn't be used in practice anyway.
+
+PAM cuts are enumerated in both strands. 
+For each valid cut, the protospacer sequence is retrieved.
 
 Protospacers are checked against the genome to count the number of exact matches: *mm0* represents the number of position with full alignment and no mismatch. 
 If *mm0* is equal to one, i.e. a unique match in the genome, the PAM is considered *unique*.
 
 For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
+These nested MH could decrease the efficiency of recreating the deletion.
 Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
-Among other, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
+Among others, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
 
-Each protospacer/cut is also tested with [inDelphi](https://indelphi.giffordlab.mit.edu/) to provide predictions of the frequency of the desired deletion.
+Each protospacer/cut is also tested with [inDelphi](https://indelphi.giffordlab.mit.edu/) to provide predicted frequency of the desired deletion.
 
-## Install
+# Installation
 
 *Python 2.7 or higher (but not Python 3).*
 
 Install with (this doesn't work yet, but will when MHcut is public):
 
 ```sh
-pip install MHcut ## add --user if you don't have root
+pip install MHcut ## add --user if you don't have root permissions
 ```
 
 Or for the latest version on GitHub:
@@ -68,17 +85,17 @@ Or for the latest version on GitHub:
 ```sh
 git clone --recursive https://github.com/jmonlong/MHcut.git
 cd MHcut
-pip install . ## add --user if you don't have root
+pip install . ## add --user if you don't have root permissions
 ```
 
 If using pip install `--user` make sure to add `/home/$(whoami)/.local/bin` to your `$PATH` if you want to run the MHcut script.
 
 You will also need [JellyFish](http://www.genome.umd.edu/jellyfish.html).
-Follow the links or find [more information below](#install-dependencies).
+Follow the instruction in its Homepage or find [more information below](#install-dependencies).
 
 These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
 
-## Preparing the reference genome
+# Preparing the reference genome and JellyFish index
 
 First download and unzip the reference genome, for example:
 
@@ -95,10 +112,8 @@ MHcut -ref hg38.fa
 
 Otherwise this indexing will be done automatically the first time that MHcut is run (might take a few extra minutes).
 
-### Preparing the JellyFish index
-
-JellyFish finds exact matches in a genomes.
-To count 23-mers in the reference genome in both strands:
+After indexing the genome, JellyFish can quickly find the number of exact matches for a particular sequence.
+To index 23-mers in the reference genome in both strands:
 
 ```sh
 jellyfish count --out-counter-len 1 -C -m 23 -s 100M hg38.fa
@@ -108,7 +123,7 @@ Note: Use `-t` to use multiple cores, e.g. `-t 10` to use 10 cores.
 
 The output file `mer_counts.jf` will later be given to MHcut using `-jf` (see Usage below).
 
-## Usage
+# Usage
 
 ```sh
 MHcut -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -jf mer_counts.jf -out MHcut-NCBI-chrX
@@ -116,7 +131,7 @@ MHcut -var NCBI_Variation_Viewer_data_uniq.tsv -ref hg38.fa -jf mer_counts.jf -o
 
 The required parameters are:
 
-- *-var* a TAB delimited file starting with chr/start/end columns and then whatever else (e.g. rsid, gene). The first row contains the column names.
+- *-var* a TAB delimited file starting with chr/start/end columns and potentially followed by other columns (e.g. rsid, gene). The first row contains the column names.
 - *-ref* a fasta file with the reference genome.
 - *-jf* the 23-mers count file created by JellyFish. 
 - *-out* the prefix for the output files (TSV files). 
@@ -135,13 +150,12 @@ Other optional parameters:
 - *-minLnhm* the minimum length of nested MH to be considered in the nested MH check. Default is `3`.
 - *-2fls* report results for both flank configurations instead of the one with strongest MH.
 - *-noShift* use input coordinates without trying to shift the variant to find the best MH.
-- *-restart* will check for existing output files and continue from the variant (useful when long jobs hit walltime).
+- *-restart* will check for existing output files and continue from the variant (useful when long jobs hit a cluster's walltime).
 
 
+# Output
 
-## Output
-
-### The "variant" file
+## The "variant" file
 
 Named `PREFIX-variants.tsv`, the "variant" file  has one line per input variant with information about the MH found and if a valid PAM cut is available or not.
 
@@ -166,7 +180,7 @@ Currently the columns of the output are:
 - *maxInDelphiFreqmESC*,*maxInDelphiFreqU2OS*,*maxInDelphiFreqHEK293*,*maxInDelphiFreqHCT116*,*maxInDelphiFreqK562*: the maximum frequency predicted by inDelphi for this exact deletion for different cell types. 
 - *maxInDelphiFreqMean* the maximum average frequency predicted by inDelphi for this exact deletion (average across the different cell types).
 
-### The "guide" file
+## The "guide" file
 
 Named `PREFIX-guides.tsv`, the "guide" file has one line per protospacer. 
 This means that the same variant can be present several times if several valid PAM cuts are available. 
@@ -188,15 +202,14 @@ Currently the columns of the output are the same as for the "variant" file with 
 - *inDelphiFreqmESC*,*inDelphiFreqU2OS*,*inDelphiFreqHEK293*,*inDelphiFreqHCT116*,*inDelphiFreqK562*: the frequency predicted by inDelphi for this exact deletion. 
 - *inDelphiFreqMean*: the average frequency predicted by inDelphi for this exact deletion across the different cell types. 
 
-### The "cartoon" file
+## The "cartoon" file
 
 Named `PREFIX-cartoons.tsv`, the "cartoon" file has one paragraph per variant with:
 
 1. The corresponding line from the "variant" file (e.g. MH metrics, PAM found or not).
 1. The location of the micro-homology. `|` means a match, `x` a mismatch.
-1. The sequence of the flanks and variant. `-` to stress the variant's limits. Eventually `...` is the middle part of a large variant that is not shown for clarity purpose.
+1. The sequence of the flanks and variant. `-` marks the limit of the variant. Eventually `...` marks the middle part of a large variant that is not shown for clarity purpose.
 1. The location of valid PAM cuts. `\` and `/` depending on the strand of the PAM motif. `X` means there are cuts on each side of the base in opposite strand.
-1. A list of valid protospacers if any.
 
 For example, a 3 bases perfect MH with 3 valid PAM cuts:
 
@@ -205,16 +218,13 @@ chr8	41725834	41725853	ANK1	True	3	3	1.0	0	17	GCG	GCG
                      |||                  |||
 GCGTGTCGTCGTTGCGGGCC-GCGATGTGCAGGGCCGGGAG-GCGCACCTTCCCCTTGGTGC
 ____________________ _______\___\\_______ ____________________
-Protospacers:
-GTTGCGGGCCGCGATGTGCA
-CGGGCCGCGATGTGCAGGGC
-GGGCCGCGATGTGCAGGGCC
 ```
 
-## Install dependencies
+# Install dependencies
 
-### JellyFish
+## JellyFish
 
+The easiest way to install JellyFish is to download a binary and include it in your *PATH*.
 The latest releases of [JellyFish](http://www.genome.umd.edu/jellyfish.html) provides a **macosx** binary and a **linux** binary.
 See for examples the [2.2.10 release](https://github.com/gmarcais/Jellyfish/releases/tag/v2.2.10).
 
@@ -246,3 +256,4 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 
 *Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
 
+If you prefer to use Docker, see the [Docker instructions](README-docker.md).
