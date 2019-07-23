@@ -5,7 +5,7 @@ The results can be explored online through the [MHcut Browser](https://mhcut-bro
 
 - [Methods](#methods)
 - [Installation](#installation)
-- [Preparing the reference genome](#preparing-the-reference-genome)
+- [Preparing the reference genome](#preparing-the-reference-genome-and-jellyfish-index)
 - [Usage](#usage)
 - [Output](#output)
 - [Install dependencies](#install-dependencies)
