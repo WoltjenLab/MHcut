@@ -29,7 +29,8 @@ def main():
                         help='use older version.')
     parser.add_argument('-restart', dest='restart', action='store_true',
                         help='restart mode. Will skip variants already in'
-                        ' output and append new output.')
+                        ' output and append new output. Works only with '
+                        'nofilt mode. It does not work if -2fls is used.')
 
     # Parameters related to protospacer alignment
     align_pars = parser.add_argument_group('Protospacer alignment')
