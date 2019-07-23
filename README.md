@@ -3,72 +3,12 @@
 MHcut was run on deletions from dbSNP and ClinVar. 
 The results can be explored online through the [MHcut Browser](https://mhcut-browser.genap.ca/).
 
-- [Methods](#methods)
 - [Installation](#installation)
 - [Preparing the reference genome](#preparing-the-reference-genome-and-jellyfish-index)
 - [Usage](#usage)
 - [Output](#output)
 - [Install dependencies](#install-dependencies)
-
-# Methods
-
-## Microhomology search
-
-    Flank 1:             |||x|||        |||x|||
-	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGGTGTTGTCGTTGACGTC
-	Flank 2:        ||||           ||||
-
-For each flank the microhomology is extended until the end of the variant as long as:
-
-- first base is a match.
-- no 2 consecutive mismatches.
-
-Two flanking configurations exists: outer-inner (1) and inner-outer (2).
-If flank1-variant-flank2, configuration 1 is MH between flank1 and variant, configuration 2 is MH between flank2 and variant. 
-In other words:
-- Outer-inner: MH between 3' variant sequence and 5' flanking sequence.
-- Inner-outer: MH between 5' variant sequence and 3' flanking sequence.
-
-MHcut uses a score to choose the "best" flank. 
-The score is currently the number of matches + number of consecutive first matches.
-In the example above, *Flank 1* is chosen (score: 9 vs 8).
-
-### Shifting deletion
-
-Sometimes the same deletion can be represented by different coordinates. 
-For this reason, MHcut will try to shift the deletion when possible and pick the coordinates that result in the highest micro-homology.
-
-For example, in the previous example, the following representation has a better homology and represent the exact same deletion:
-
-                    |||||||        |||||||
-	AGTGCCGTTAATCAGAGGTCGGG-CTGTGATGGTCGGG-GTGTTGTCGTTGACGTC
-
-## PAM cut search
-
-                         ||||x||        ||||x||
-	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGCAGTTGTCGTTGACGTC
-	                        <---------->
-
-PAM cuts are searched between the end of the first exact match stretch of the MH and the variant boundary. 
-In addition, a PAM cut is allowed to be within the MH region if after the first 3 positions. 
-In the example above, the first valid cut is between the G and C, and the last valid cut between the C and G.
-
-We consider only PAMs that result in the a cut at less than 50 bp from the variant's breakpoints. 
-This can be changed with the `-maxTail` parameter (see [Usage](#usage)).
-It saves time by skipping PAMs in the middle of large deletions, as they couldn't be used in practice anyway.
-
-PAM cuts are enumerated in both strands. 
-For each valid cut, the protospacer sequence is retrieved.
-
-Protospacers are checked against the genome to count the number of exact matches: *mm0* represents the number of position with full alignment and no mismatch. 
-If *mm0* is equal to one, i.e. a unique match in the genome, the PAM is considered *unique*.
-
-For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
-These nested MH could decrease the efficiency of recreating the deletion.
-Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
-Among others, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
-
-Each protospacer/cut is also tested with [inDelphi](https://indelphi.giffordlab.mit.edu/) to provide predicted frequency of the desired deletion.
+- [Methods](#methods)
 
 # Installation
 
@@ -257,3 +197,64 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 *Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
 
 If you prefer to use Docker, see the [Docker instructions](README-docker.md).
+
+# Methods
+
+## Microhomology search
+
+    Flank 1:             |||x|||        |||x|||
+	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGGTGTTGTCGTTGACGTC
+	Flank 2:        ||||           ||||
+
+For each flank the microhomology is extended until the end of the variant as long as:
+
+- first base is a match.
+- no 2 consecutive mismatches.
+
+Two flanking configurations exists: outer-inner (1) and inner-outer (2).
+If flank1-variant-flank2, configuration 1 is MH between flank1 and variant, configuration 2 is MH between flank2 and variant. 
+In other words:
+- Outer-inner: MH between 3' variant sequence and 5' flanking sequence.
+- Inner-outer: MH between 5' variant sequence and 3' flanking sequence.
+
+MHcut uses a score to choose the "best" flank. 
+The score is currently the number of matches + number of consecutive first matches.
+In the example above, *Flank 1* is chosen (score: 9 vs 8).
+
+### Shifting deletion
+
+Sometimes the same deletion can be represented by different coordinates. 
+For this reason, MHcut will try to shift the deletion when possible and pick the coordinates that result in the highest micro-homology.
+
+For example, in the previous example, the following representation has a better homology and represent the exact same deletion:
+
+                    |||||||        |||||||
+	AGTGCCGTTAATCAGAGGTCGGG-CTGTGATGGTCGGG-GTGTTGTCGTTGACGTC
+
+## PAM cut search
+
+                         ||||x||        ||||x||
+	AGTGCCGTTAATCAGAGGTC-GGGCTGTGATGGTC-GGGCAGTTGTCGTTGACGTC
+	                        <---------->
+
+PAM cuts are searched between the end of the first exact match stretch of the MH and the variant boundary. 
+In addition, a PAM cut is allowed to be within the MH region if after the first 3 positions. 
+In the example above, the first valid cut is between the G and C, and the last valid cut between the C and G.
+
+We consider only PAMs that result in the a cut at less than 50 bp from the variant's breakpoints. 
+This can be changed with the `-maxTail` parameter (see [Usage](#usage)).
+It saves time by skipping PAMs in the middle of large deletions, as they couldn't be used in practice anyway.
+
+PAM cuts are enumerated in both strands. 
+For each valid cut, the protospacer sequence is retrieved.
+
+Protospacers are checked against the genome to count the number of exact matches: *mm0* represents the number of position with full alignment and no mismatch. 
+If *mm0* is equal to one, i.e. a unique match in the genome, the PAM is considered *unique*.
+
+For each protospacer/cut, we also list other MHs that flank the cut and could be used preferentially instead of the one desired.
+These nested MH could decrease the efficiency of recreating the deletion.
+Only exact MHs of at least 3 bp are considered and if at least as close from each other as the target MH.
+Among others, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
+
+Each protospacer/cut is also tested with [inDelphi](https://indelphi.giffordlab.mit.edu/) to provide predicted frequency of the desired deletion.
+
