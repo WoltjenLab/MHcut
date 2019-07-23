@@ -61,6 +61,7 @@ def mhcut(args):
     # Also read the header line
     in_nbcols = len(inhead.split('\t'))
     out_nbcols = len(outhead.split('\t'))
+    gout_nbcols = len(gouthead.split('\t'))
     restart_mode = False
     test_restart = True
     r_cur_guide_line = ''
@@ -135,7 +136,8 @@ def mhcut(args):
                 # and not end of file
                 r_gline = ''
                 r_cgline = r_cur_guide_line.rstrip('\n').split('\t')
-                while '\t'.join(r_cgline[:in_nbcols]) == input_line_raw:
+                while '\t'.join(r_cgline[:in_nbcols]) == input_line_raw and \
+                      len(r_cgline) == gout_nbcols:
                     r_gline += r_cur_guide_line
                     try:
                         r_cur_guide_line = r_guide_outfile.next()
