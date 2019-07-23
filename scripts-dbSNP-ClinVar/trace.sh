@@ -30,24 +30,17 @@ sbatch jellyfishJob.sh
 
 ## Split input and run MHcut in parallel
 INFILE=dbsnp-clinvar-deletion
-for CHUNK in `seq 1 30`
-do
-    sbatch -J mhcut-$INFILE-$CHUNK -o mhcut-$INFILE-$CHUNK.out -e mhcut-$INFILE-$CHUNK.out mhcutJob.sh $INFILE $CHUNK
-done
+sbatch -J mhcut-$INFILE -o "%x-%a.out" -e "%x-%a.out" --array=1-600 mhcutJob.sh $INFILE
 
-## If necessary, rerun the ones that didn't finish
-REDO=`grep -c "100%" mhcut-dbsnp-clinvar-deletion-*out | awk 'BEGIN{FS=":"}{if($2==0){match($1, "deletion-(.*).out", a); print a[1]}}'`
-INFILE=dbsnp-clinvar-deletion
-for CHUNK in $REDO
-do
-    sbatch -J mhcut-$INFILE-$CHUNK -o mhcut-$INFILE-$CHUNK.out -e mhcut-$INFILE-$CHUNK.out mhcutJob.sh $INFILE $CHUNK
-done
+REDO=`grep -c "Done." mhcut-dbsnp-clinvar-deletion-*out | awk 'BEGIN{FS=":";ORS=","}{if($2==0){match($1, "deletion-(.*).out", a); print a[1]}}'`
+
+sbatch -J mhcut-$INFILE -o "%x-%a.out" -e "%x-%a.out" --array=$REDO mhcutJob.sh $INFILE
 
 ## Merge MHcut results
 for TYPE in variants guides cartoons
 do
     head -1 mhcut-dbsnp-clinvar-deletion-1-$TYPE.tsv > mhcut-dbsnp-clinvar-deletion-$TYPE.tsv
-    for CHUNK in `seq 1 30`
+    for CHUNK in `seq 1 600`
     do
 	sed 1d mhcut-dbsnp-clinvar-deletion-$CHUNK-$TYPE.tsv >> mhcut-dbsnp-clinvar-deletion-$TYPE.tsv
     done
@@ -63,16 +56,17 @@ done
 #
 ## Split input and run MHcut in parallel
 INFILE=dbsnp-clinvar-deletion
-for CHUNK in `seq 1 30`
-do
-    sbatch -J mhcutxCas9-$INFILE-$CHUNK -o mhcutxCas9-$INFILE-$CHUNK.out -e mhcutxCas9-$INFILE-$CHUNK.out mhcutJob-xCas9.sh $INFILE $CHUNK
-done
+sbatch -J mhcutxCas9-$INFILE -o "%x-%a.out" -e "%x-%a.out" --array=1-600 mhcutJob-xCas9.sh $INFILE
+
+REDO=`grep -c "Done." mhcutxCas9-dbsnp-clinvar-deletion-*out | awk 'BEGIN{FS=":";ORS=","}{if($2==0){match($1, "deletion-(.*).out", a); print a[1]}}'`
+
+sbatch -J mhcutxCas9-$INFILE -o "%x-%a.out" -e "%x-%a.out" --array=$REDO mhcutJob-xCas9.sh $INFILE
 
 ## Merge MHcut results
 for TYPE in variants guides cartoons
 do
     head -1 mhcut-dbsnp-clinvar-deletion-xCas9-1-$TYPE.tsv > mhcut-dbsnp-clinvar-deletion-xCas9-$TYPE.tsv
-    for CHUNK in `seq 1 30`
+    for CHUNK in `seq 1 600`
     do
 	sed 1d mhcut-dbsnp-clinvar-deletion-xCas9-$CHUNK-$TYPE.tsv >> mhcut-dbsnp-clinvar-deletion-xCas9-$TYPE.tsv
     done
