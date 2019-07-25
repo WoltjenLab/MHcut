@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 
 setup(name='MHcut',
-      version='0.1',
+      version='0.1.1',
       description='Micro-Homology cut finder',
-      url='http://github.com/jmonlone/MHcut',
+      url='http://github.com/WoltjenLab/MHcut',
       author='Woltjen & Bourque labs',
       author_email='jean.monlong@gmail.com',
       license='MIT',
