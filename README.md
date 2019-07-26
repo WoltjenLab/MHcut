@@ -15,7 +15,7 @@ The dataset was also deposited on FigShare: [https://doi.org/10.6084/m9.figshare
 
 *Python 2.7 or higher (but not Python 3).*
 
-Install with (this doesn't work yet, but will when MHcut is public):
+Install with:
 
 ```sh
 pip install MHcut ## add --user if you don't have root permissions
@@ -258,4 +258,5 @@ Only exact MHs of at least 3 bp are considered and if at least as close from eac
 Among others, the output contains information about the best nested MH (shortened to *nmh*) defined as the nested MH with the highest pattern score ([Bae et al 2014](http://www.nature.com.proxy3.library.mcgill.ca/articles/nmeth.3015)).
 
 Each protospacer/cut is also tested with [inDelphi](https://indelphi.giffordlab.mit.edu/) to provide predicted frequency of the desired deletion.
+
 

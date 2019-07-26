@@ -11,6 +11,7 @@ Main workflow:
 from pyfaidx import Fasta
 import sys
 import os
+import shutil
 import flanks
 import pam_utils
 import variant
@@ -56,31 +57,38 @@ def mhcut(args):
     outhead += '\t' + '\t'.join(pam_utils.headersVariants())
     gouthead = outhead + '\t' + '\t'.join(pam_utils.headersGuides())
 
-    # If restart mode: read variant output file and save last line
+    # If restart mode: copy and open unfinished files
+    # Also read the header line
     in_nbcols = len(inhead.split('\t'))
-    last_line = inhead
-    skip_line = False
-    write_mode = 'w'
+    out_nbcols = len(outhead.split('\t'))
+    gout_nbcols = len(gouthead.split('\t'))
+    restart_mode = False
+    test_restart = True
+    r_cur_guide_line = ''
     if args.restart and os.path.isfile(args.outprefix + '-variants.tsv'):
-        cpt = 0
-        variant_outfile = open(args.outprefix + '-variants.tsv', 'r')
-        for line in variant_outfile:
-            cpt += 1
-        variant_outfile.close()
-        print 'Restart mode: {} input lines will be skipped.'.format(cpt)
-        line = line.rstrip().split('\t')
-        last_line = '\t'.join(line[:in_nbcols])
-        skip_line = True
-        write_mode = 'a'
+        print 'Restart mode.'
+        shutil.copyfile(args.outprefix + '-variants.tsv',
+                        args.outprefix + '-restart-variants.tsv')
+        shutil.copyfile(args.outprefix + '-guides.tsv',
+                        args.outprefix + '-restart-guides.tsv')
+        shutil.copyfile(args.outprefix + '-cartoons.tsv',
+                        args.outprefix + '-restart-cartoons.tsv')
+        r_variant_outfile = open(args.outprefix + '-restart-variants.tsv')
+        r_variant_outfile.next()
+        r_guide_outfile = open(args.outprefix + '-restart-guides.tsv')
+        r_guide_outfile.next()
+        r_cur_guide_line = r_guide_outfile.next()
+        r_cartoon_outfile = open(args.outprefix + '-restart-cartoons.tsv')
+        r_cartoon_outfile.next()
+        restart_mode = True
 
     # Open connection to output files
-    variant_outfile = open(args.outprefix + '-variants.tsv', write_mode)
-    guide_outfile = open(args.outprefix + '-guides.tsv', write_mode)
-    cartoon_outfile = open(args.outprefix + '-cartoons.tsv', write_mode)
-    if not skip_line:
-        variant_outfile.write(outhead + '\n')
-        guide_outfile.write(gouthead + '\n')
-        cartoon_outfile.write(outhead + '\n\n')
+    variant_outfile = open(args.outprefix + '-variants.tsv', 'w')
+    guide_outfile = open(args.outprefix + '-guides.tsv', 'w')
+    cartoon_outfile = open(args.outprefix + '-cartoons.tsv', 'w')
+    variant_outfile.write(outhead + '\n')
+    guide_outfile.write(gouthead + '\n')
+    cartoon_outfile.write(outhead + '\n\n')
 
     # Init inDelphi model if necessary
     idmodels = {}
@@ -105,9 +113,6 @@ def mhcut(args):
             pbar.update(update_pb)
         # Parse line from the variant input
         input_line_raw = input_line.rstrip('\n')
-        if skip_line:
-            skip_line = input_line_raw != last_line
-            continue
         input_line = input_line_raw.split('\t')
         vstart = int(input_line[1])
         vend = int(input_line[2])
@@ -118,6 +123,44 @@ def mhcut(args):
         if input_line[0] not in reffa.keys():
             # If chromosome name not in reference, skip variant
             continue
+        # Restart mode
+        if restart_mode and test_restart:
+            try:
+                r_vline = r_variant_outfile.next()
+                r_vline = r_vline.rstrip('\n').split('\t')
+                r_vline_raw = '\t'.join(r_vline[:in_nbcols])
+            except StopIteration:
+                r_vline = r_vline_raw = ''
+            if input_line_raw == r_vline_raw and len(r_vline) == out_nbcols:
+                # Write guides: as long as it matches the variant
+                # and not end of file
+                r_gline = ''
+                r_cgline = r_cur_guide_line.rstrip('\n').split('\t')
+                while '\t'.join(r_cgline[:in_nbcols]) == input_line_raw and \
+                      len(r_cgline) == gout_nbcols:
+                    r_gline += r_cur_guide_line
+                    try:
+                        r_cur_guide_line = r_guide_outfile.next()
+                    except StopIteration:
+                        r_cur_guide_line = ''
+                        test_restart = False
+                    r_cgline = r_cur_guide_line.rstrip('\n').split('\t')
+                # Write cartoon: 5 lines
+                r_cline = ''
+                for ii in range(5):
+                    try:
+                        r_cline += r_cartoon_outfile.next()
+                    except StopIteration:
+                        test_restart = False
+                # Skip this variant
+                if test_restart:
+                    variant_outfile.write('\t'.join(r_vline) + '\n')
+                    guide_outfile.write(r_gline)
+                    cartoon_outfile.write(r_cline)
+                    continue
+            else:
+                # Don't skip and don't test restart files anymore
+                test_restart = False
         # Create a variant object with the reference sequence
         var = variant.Variant(input_line[0], vstart, vend, reffa)
         if args.no_opt_shift:
@@ -239,3 +282,11 @@ def mhcut(args):
     variant_outfile.close()
     guide_outfile.close()
     cartoon_outfile.close()
+
+    if restart_mode:
+        r_variant_outfile.close()
+        r_guide_outfile.close()
+        r_cartoon_outfile.close()
+        os.remove(args.outprefix + '-restart-variants.tsv')
+        os.remove(args.outprefix + '-restart-guides.tsv')
+        os.remove(args.outprefix + '-restart-cartoons.tsv')
