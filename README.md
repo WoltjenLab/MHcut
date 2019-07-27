@@ -8,6 +8,7 @@ The dataset was also deposited on FigShare: [https://doi.org/10.6084/m9.figshare
 - [Preparing the reference genome](#preparing-the-reference-genome-and-jellyfish-index)
 - [Usage](#usage)
 - [Output](#output)
+- [Test installation](#test-installation)
 - [Install dependencies](#install-dependencies)
 - [Docker image](#docker-image)
 - [Methods](#methods)
@@ -162,6 +163,24 @@ GCGTGTCGTCGTTGCGGGCC-GCGATGTGCAGGGCCGGGAG-GCGCACCTTCCCCTTGGTGC
 ____________________ _______\___\\_______ ____________________
 ```
 
+# Test installation
+
+A small dummy dataset is provided in the `testdata` folder, to test that the installation was completed successfully.
+
+Try running:
+
+```shell
+cd testdata
+jellyfish count --out-counter-len 1 -C -m 23 -s 100M chr20-1Mbp.fa
+MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mers_counts.jf -out test
+```
+
+Or for a more comprehensive run:
+
+```sh
+MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mers_counts.jf -out test -nofilt -minvarL 1 -indelphi
+```
+
 # Install dependencies
 
 ## JellyFish
@@ -242,6 +261,14 @@ Running MHcut:
 
 ```shell
 docker run -v "`pwd`":/home -w /home jmonlong/mhcut MHcut -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -jf mer_counts.jf -out docker-test
+```
+
+You can test it on the test data:
+
+```sh
+cd testdata
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut jellyfish count --out-counter-len 1 -C -m 23 -s 100M chr20-1Mbp.fa
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mer_counts.jf -out test
 ```
 
 ## Optional: build the Docker image manually
