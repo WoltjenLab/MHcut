@@ -9,6 +9,7 @@ The dataset was also deposited on FigShare: [https://doi.org/10.6084/m9.figshare
 - [Usage](#usage)
 - [Output](#output)
 - [Install dependencies](#install-dependencies)
+- [Docker image](#docker-image)
 - [Methods](#methods)
 
 # Installation
@@ -34,7 +35,7 @@ If using pip install `--user` make sure to add `/home/$(whoami)/.local/bin` to y
 You will also need [JellyFish](http://www.genome.umd.edu/jellyfish.html).
 Follow the instruction in its Homepage or find [more information below](#install-dependencies).
 
-These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](README-docker.md)).
+These dependencies are not particularly "painful" to install but we also built a **Docker container** as an alternative (see [Docker instructions](#docker-image)).
 
 # Preparing the reference genome and JellyFish index
 
@@ -197,7 +198,61 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 
 *Add the last line to your `~/.basrc` file to make sure the PATH is always correct.*
 
-If you prefer to use Docker, see the [Docker instructions](README-docker.md).
+If you prefer to use Docker, see the [Docker instructions](#docker-image) below.
+
+## Docker image
+
+Docker simplifies the installation of tools by preparing an image of an OS with all the requirements and dependencies to run the tool.
+No need for the user to install many different libraries and tools on their system, the docker image can be used directly.
+The user still has to [install Docker](https://docs.docker.com/install/) though.
+
+### Docker crash course
+
+To run a command `command arg1 arg2 ...` within a docker container, a typical docker command looks like this:
+
+```shell
+docker run -v PATHL:PATHC -w PATHC imageName command arg1 arg2 ...
+```
+
+- `-v PATHL:PATHC` links the local folder `PATHL` to the folder `PATHC` in the container. Typically `PATHL` contains the input files and will be where we want the output files written.
+- `-w PATHC` means that the working directory (where the command will be run) is `PATHC`, i.e. we want to run the command in the folder that we linked with the previous parameter (and that contains the input files).
+- `imageName` is the name of the docker container. If not built manually, Docker will try to download it from Docker Hub or other platforms.
+
+Hence for us, a dockerized command might look like that:
+
+```shell
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut MHcut -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -out docker-test
+```
+
+We link the current folder (`` `pwd` ``) with a `home` folder in the container that we will use as working directory and run the python command.
+
+## Docker workflow for MHcut
+
+*Note: this assumes that the reference genome file was downloaded and the input TSV file is ready.*
+
+The [MHcut docker image](https://hub.docker.com/r/jmonlong/mhcut) will automatically be downloaded by Docker the first time that `docker run jmonlong/MHcut` is run.
+
+Indexing the reference with JellyFish (if not already done):
+
+```shell
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut jellyfish count --out-counter-len 1 -C -m 23 -s 100M hg38.fa
+```
+
+Running MHcut:
+
+```shell
+docker run -v "`pwd`":/home -w /home jmonlong/mhcut MHcut -var clinvar-grch38-all-deletion.tsv -ref hg38.fa -jf mer_counts.jf -out docker-test
+```
+
+## Optional: build the Docker image manually
+
+An image of MHcut is [available on Docker Hub](https://hub.docker.com/r/jmonlong/mhcut) but one might still want to build an image manually to use the current version on the master branch.
+
+After cloning the repo, we can build the container manually by running the following command at the root of the repo (where the `Dockerfile` is):
+
+```shell
+docker build -t mhcut .
+```
 
 # Methods
 
