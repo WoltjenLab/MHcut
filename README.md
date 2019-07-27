@@ -230,7 +230,7 @@ We link the current folder (`` `pwd` ``) with a `home` folder in the container t
 
 *Note: this assumes that the reference genome file was downloaded and the input TSV file is ready.*
 
-The [MHcut docker image](https://hub.docker.com/r/jmonlong/mhcut) will automatically be downloaded by Docker the first time that `docker run jmonlong/MHcut` is run.
+The [MHcut docker image](https://hub.docker.com/r/jmonlong/mhcut) will automatically be downloaded by Docker the first time that `docker run jmonlong/mhcut` is run.
 
 Indexing the reference with JellyFish (if not already done):
 
