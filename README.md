@@ -172,13 +172,13 @@ Try running:
 ```shell
 cd testdata
 jellyfish count --out-counter-len 1 -C -m 23 -s 100M chr20-1Mbp.fa
-MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mers_counts.jf -out test
+MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mer_counts.jf -out test
 ```
 
 Or for a more comprehensive run:
 
 ```sh
-MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mers_counts.jf -out test -nofilt -minvarL 1 -indelphi
+MHcut -var test-chr20-1Mbp.tsv -ref chr20-1Mbp.fa -jf mer_counts.jf -out test -nofilt -minvarL 1 -indelphi
 ```
 
 # Install dependencies

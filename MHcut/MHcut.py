@@ -64,6 +64,7 @@ def mhcut(args):
     gout_nbcols = len(gouthead.split('\t'))
     restart_mode = False
     test_restart = True
+    r_cur_variant_line = ''
     r_cur_guide_line = ''
     if args.restart and os.path.isfile(args.outprefix + '-variants.tsv'):
         print 'Restart mode.'
@@ -75,6 +76,7 @@ def mhcut(args):
                         args.outprefix + '-restart-cartoons.tsv')
         r_variant_outfile = open(args.outprefix + '-restart-variants.tsv')
         r_variant_outfile.next()
+        r_cur_variant_line = r_variant_outfile.next()
         r_guide_outfile = open(args.outprefix + '-restart-guides.tsv')
         r_guide_outfile.next()
         r_cur_guide_line = r_guide_outfile.next()
@@ -125,12 +127,12 @@ def mhcut(args):
             continue
         # Restart mode
         if restart_mode and test_restart:
+            r_vline = r_cur_variant_line.rstrip('\n').split('\t')
+            r_vline_raw = '\t'.join(r_vline[:in_nbcols])
             try:
-                r_vline = r_variant_outfile.next()
-                r_vline = r_vline.rstrip('\n').split('\t')
-                r_vline_raw = '\t'.join(r_vline[:in_nbcols])
+                r_cur_variant_line = r_variant_outfile.next()
             except StopIteration:
-                r_vline = r_vline_raw = ''
+                test_restart = False
             if input_line_raw == r_vline_raw and len(r_vline) == out_nbcols:
                 # Write guides: as long as it matches the variant
                 # and not end of file
