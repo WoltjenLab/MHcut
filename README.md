@@ -219,13 +219,13 @@ export PATH=~/soft/jellyfish-2.2.10/bin:$PATH
 
 If you prefer to use Docker, see the [Docker instructions](#docker-image) below.
 
-## Docker image
+# Docker image
 
 Docker simplifies the installation of tools by preparing an image of an OS with all the requirements and dependencies to run the tool.
 No need for the user to install many different libraries and tools on their system, the docker image can be used directly.
 The user still has to [install Docker](https://docs.docker.com/install/) though.
 
-### Docker crash course
+## Docker crash course
 
 To run a command `command arg1 arg2 ...` within a docker container, a typical docker command looks like this:
 
@@ -304,7 +304,7 @@ MHcut uses a score to choose the "best" flank.
 The score is currently the number of matches + number of consecutive first matches.
 In the example above, *Flank 1* is chosen (score: 9 vs 8).
 
-### Shifting deletion
+## Shifting deletion
 
 Sometimes the same deletion can be represented by different coordinates. 
 For this reason, MHcut will try to shift the deletion when possible and pick the coordinates that result in the highest micro-homology.
