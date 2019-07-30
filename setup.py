@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 
 setup(name='MHcut',
       version='1.0.0',
       description='Micro-Homology cut finder',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       url='http://github.com/WoltjenLab/MHcut',
       author='Woltjen & Bourque labs',
       author_email='jean.monlong@gmail.com',
