@@ -17,7 +17,7 @@ The dataset was also deposited on FigShare: [https://doi.org/10.6084/m9.figshare
 
 *Python 2.7 or higher (but not Python 3).*
 
-Install with:
+MHcut is in [PyPI](https://pypi.org/project/MHcut/) and can be installed with:
 
 ```sh
 pip install MHcut ## add --user if you don't have root permissions
