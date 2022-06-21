@@ -14,7 +14,7 @@ setup(name='MHcut',
       author_email='jean.monlong@gmail.com',
       license='MIT',
       packages=find_packages(),
-      install_requires=['pyfaidx', 'tqdm', 'argparse', 'numpy==1.15.3',
+      install_requires=['pyfaidx', 'tqdm', 'argparse', 'numpy==1.22.0',
                         'pandas==0.23.4', 'scikit-learn==0.20.0',
                         'scipy==1.1.0'],
       entry_points={'console_scripts': ['MHcut = MHcut.run_mhcut:main']})
