@@ -16,5 +16,5 @@ setup(name='MHcut',
       packages=find_packages(),
       install_requires=['pyfaidx', 'tqdm', 'argparse', 'numpy==1.15.3',
                         'pandas==0.23.4', 'scikit-learn==0.20.0',
-                        'scipy==1.1.0'],
+                        'scipy==1.10.0'],
       entry_points={'console_scripts': ['MHcut = MHcut.run_mhcut:main']})
